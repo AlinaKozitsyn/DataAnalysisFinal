@@ -1,6 +1,7 @@
 # Project Feedback - Action Items
 
-The original hebrew version: OriginalPdf/proposal_feedback.pdf
+The original hebrew version:
+https://github.com/AlinaKozitsyn/DataAnalysisFinal/blob/main/OriginalPdf/proposal_feedback.pdf
 
 ## 1. Introduction & Background
 - [ ] [cite_start]Mention that the data is from Kaggle and there are 68 existing notebooks[cite: 2].
