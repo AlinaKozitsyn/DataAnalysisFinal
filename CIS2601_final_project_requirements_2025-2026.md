@@ -35,7 +35,13 @@ The presentation should:
 - Briefly describe the data and methods used
 - Highlight key findings
 
-Each team member should say something substantial. Focus on **key decisions, reasoning, and findings** — not a step-by-step walkthrough. Practice the presentation multiple times before delivering it. **Time will be strictly enforced.**
+Each team member should say something substantial. Your presentation should not cover 
+everything you have done ("we did this, then we did this, etc."), instead, it should convey key 
+decisions you've made, why, and what you found with a strong emphasis on validity.
+
+Time will strictly be enforced. Make sure to allocate sufficient time to the things you want to 
+cover the most and help your project stand out. It is recommended to practice the presentation a 
+few times before giving/recording it. 
 
 ### Grading Rubric (100 points)
 
@@ -47,9 +53,14 @@ Each team member should say something substantial. Focus on **key decisions, rea
 | 10 | Data overview |
 | 20 | Methods appropriateness and quality of execution |
 | 10 | Findings |
-| 10 | Professionalism: quality of delivery, practice, unified story, slide readability |
+| 10 | Professionalism: (1) How well did the team present? (2) Does the presentation 
+appear to be well-practiced? (3) Did the team present a unified story, or did it 
+seem like independent pieces of work patched together? (4) Are the slides well 
+organized, readable, not full of text, featuring figures with legible labels, legends, 
+etc.? |
 | 5  | Teamwork: did everyone contribute meaningfully? |
-| 5  | Time management: finished on time? |
+| 5  | Time management: Did the team spend time well during the presentation? 
+Finished on time or got cut off? |
 
 ---
 
@@ -77,26 +88,29 @@ Submit a **single PDF per team** on Moodle with:
 - **Data folder** *(only for public or self-collected data, not staff-provided data)*
 
 **Section 1 – Introduction**
-- General and specific research question(s)
-- Why is this problem important and hard?
-- What does prior work/theory say, and how are you extending it?
-- Your approach
+Introduce your general and specific research question(s). What 
+is the general problem area that this analysis contributes to? What specific problem are 
+you trying to solve? Why is this important? Why is this hard? What does theory / prior 
+work tell us about this problem, and how are you extending it? What is your approach?
 
 **Section 2 – Data Overview**
-- What are the entities in the data?
-- How many entities are there?
-- What features or feature families are relevant to the problem?
+Describe your data at a high level, answering questions such 
+as what the entities are in the data, how many entities are there, and what are the 
+features or feature families relevant to the problem you're tackling?
 
 **Section 3 – Methods and Results**
-- Key results of the analysis and model(s) used
-- Why you chose this modeling approach
-- What you learned from it
-- Model fit and validity checks
-- Figures and tables are allowed but count toward the 3-page limit
+Describe the *key results* of your analysis and the 
+model(s) used to obtain them. Explain why you chose to model the data in this particular 
+way and what you've learned from it. Make sure to check how well the model fits the 
+data and verify that the model results are well-supported by the data. You are free to use 
+figures and tables in this section (as well as elsewhere in the main body), but these 
+count towards your 3-page limit. Think carefully about how you're using your 3 pages.
 
 **Section 4 – Limitations and Future Work**
-- Limitations of your approach and findings
-- Future directions for 1 additional month and 3 additional months of work
+What are the limitations of your approach and 
+/or findings in generalizing beyond your sample? In addition, briefly describe future 
+directions you would follow if you had an additional month or three additional months to 
+work on this project.
 
 > The report may be written in **Hebrew or English** and does not need to be generated from an Rmd notebook. Check text readability and that all figures have legible labels and legends.
 
