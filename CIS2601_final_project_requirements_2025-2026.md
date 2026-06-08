@@ -53,11 +53,7 @@ few times before giving/recording it.
 | 10 | Data overview |
 | 20 | Methods appropriateness and quality of execution |
 | 10 | Findings |
-| 10 | Professionalism: (1) How well did the team present? (2) Does the presentation 
-appear to be well-practiced? (3) Did the team present a unified story, or did it 
-seem like independent pieces of work patched together? (4) Are the slides well 
-organized, readable, not full of text, featuring figures with legible labels, legends, 
-etc.? |
+| 10 | Professionalism: (1) How well did the team present? (2) Does the presentation appear to be well-practiced? (3) Did the team present a unified story, or did it seem like independent pieces of work patched together? (4) Are the slides well organized, readable, not full of text, featuring figures with legible labels, legends, etc.? |
 | 5  | Teamwork: did everyone contribute meaningfully? |
 | 5  | Time management: Did the team spend time well during the presentation? 
 Finished on time or got cut off? |
