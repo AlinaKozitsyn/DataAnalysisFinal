@@ -1,42 +1,67 @@
-THE README MUST BE UPDATED TO THE WHOLE PROJECT!
-# Data
-The dataset is `teen_mental_health.csv`. It's a survey-style dataset on teenagers, looking at how their social media use lines up with things like sleep, stress, school, and overall mental health.
+# Internet Use and Mental Health in Adolescents
+### Hours Online vs. the Feeling of Being Addicted
 
-## High-level description
+Final project — Data Analysis course. Authors: Noam Avizmil, Tomer Golshani, May Mandalaoui, Alina Kozitzyna.
 
-Each row is one teenager. There are 1,200 rows and 13 columns. Ages range from 13 to 19, and the split between male and female respondents is fairly even (615 vs 585). Most of the variables are numeric (hours, scores from 1 to 10), with a few categorical ones for things like gender, the platform they use most, and how social they feel day to day.
+## Research question
 
-The last column, `depression_label`, is the one we are treating as the outcome of interest. It's a binary 0/1 flag, and it's heavily imbalanced — only about 2.6% of the rows are labelled 1. That's something we will need to keep in mind later on when I get to the modelling part, because plain accuracy won't tell me much with a split like that.
+Is adolescent mental health more strongly associated with **how much** time is spent online
+(raw exposure) or with the **subjective feeling of being addicted** (loss of control)? The two
+are often conflated; we separate them in the same models and ask which one actually tracks
+depression and loneliness, controlling for gender, physical activity, and offline relationships.
 
-## The variables
+**Headline result:** perceived addiction (IAT) dominates; raw social-media hours is not
+significant once addiction is in the model. This holds for depression, for loneliness, and for
+predicting clinically-significant depression (test AUC = 0.78).
 
-**age** — integer, 13 to 19. The age of the teenager at the time of the survey. The mean sits around 16.
+## Data
 
-**gender** — character, either `male` or `female`.The split is close to 50/50.
+`data/new_data.xlsx` — survey of **819 school students**, ages 13–19 (mean ~15.8), 534 female /
+285 male. No missing values. Each row is one student.
 
-**daily_social_media_hours** — numeric, roughly 1 to 8 hours. Self-reported time spent on social media per day. Average is about 4.5 hours.
+> **Note:** the data-source citation still needs to be filled in by the authors (see the report's
+> bibliography). This README and the report describe the dataset shipped in `data/new_data.xlsx`.
 
-**platform_usage** — character. Three values: `Instagram`, `TikTok`, or `Both`. This is whichever platform the respondent says they spend most of their time on. The three buckets are pretty evenly sized.
+Key variables used:
 
-**sleep_hours** — numeric, around 4 to 9 hours. Average reported sleep per night. Mean is about 6.5 hours.
+| Role | Variable(s) | Instrument |
+|------|-------------|------------|
+| Addiction (subjective) | `TotalIA` (0-94), `IAC` (category) | Internet Addiction Test (Young, 1998) |
+| Depression (outcome) | `totalphq` (0-27), `categoryphq` | PHQ-9 (Kroenke et al., 2001) |
+| Loneliness (outcome) | `lonelinesstotal` | UCLA Loneliness Scale (Russell, 1996) |
+| Exposure (quantity) | `socialmediatime`, `internettime` | self-report, ordinal buckets |
+| Controls | `gender`, `exercise`, `friendsrelationship` | self-report |
 
-**screen_time_before_sleep** — numeric, 0.5 to 3 hours. How long they're on a screen right before going to bed.
+The IAT severity bands are heavily skewed toward "Normal" (only one student in the most-severe
+band), so the **continuous** IAT score is used in all models; categories are used only as an
+ordered descriptive lens. The prediction target, clinically-significant depression (PHQ-9 >= 10),
+is well balanced (301/819 = 36.8%).
 
-**academic_performance** — numeric, roughly 2.0 to 4.0. A GPA-style measure on a 4-point scale. Mean is about 3.0.
+## Method
 
-**physical_activity** — numeric, 0 to about 2. Describes the hours of physical activity per day.
+- **Train/test split (70/30) *before* any scaling** — scaling parameters are learned on the
+  training set only and applied to both sets (no data leakage). Logistic split is stratified.
+- **Linear regression** for depression and loneliness; **logistic regression** for PHQ-9 >= 10.
+- **VIF** check for multicollinearity between hours and addiction (all ~1.5; no problem).
+- **Ordered-factor visualizations** (jitter + boxplots) for severity, no bar charts.
 
-**social_interaction_level** — character. Three values: `low`, `medium`, `high`. Self-rated level of in-person social interaction. Roughly even split across the three.
+## Repository layout
 
-**stress_level** — integer, 1 to 10. Self-reported stress on a 10-point scale. Mean is about 5.5.
+```
+analysis.R          # full reproducible pipeline (run this)
+data/new_data.xlsx  # raw survey data
+figures/            # all figures used in the report (regenerated by analysis.R)
+REPORT.docx         # final written report
+ReportChecklist.md  # grading checklist
+ProposalFeedback.md # advisor feedback
+```
 
-**anxiety_level** — integer, 1 to 10. Same kind of 10-point self-rating, but for anxiety. Mean around 5.6.
+## Reproduce
 
-**addiction_level** — integer, 1 to 10. Self-rated sense of being "addicted" to social media. Mean around 5.6 as well.
+```r
+# R 4.x with: tidyverse, readxl, broom, car, pROC
+Rscript analysis.R
+```
 
-**depression_label** — binary, 0 or 1. Whether the respondent is flagged as showing signs of depression. Only 31 of the 1,200 rows are labelled 1, so this is a very imbalanced target.
-
-## Files in this folder
-
-- `teen_mental_health.csv` — the raw data, 1,200 rows by 13 columns.
-- `README.md` — this file.
+This prints every coefficient, VIF, AUC and severity-lens number reported in `REPORT.docx`
+and writes the figures to `figures/`.
