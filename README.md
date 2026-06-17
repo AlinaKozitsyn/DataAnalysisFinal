@@ -18,13 +18,10 @@ Logistic AUC = 0.78 (DeLong CI 0.74–0.81; CV 0.77).
 
 ## Data
 
-`data/new_data.xlsx` — survey of **819 school students**, ages 13–19 (mean ~15.8), 534 female /
+`A data set exploring the link and associated factors of internet addiction, loneliness, and depression among adolescents in Bangladesh` — survey of **819 school students**, ages 13–19 (mean ~15.8), 534 female /
 285 male. No missing values. Each row is one student.
 
-> **The data file is NOT included in this repository** (per course requirements). Download it from
-> the project data folder — **`<PASTE GOOGLE-DRIVE DATA-FOLDER LINK HERE>`** — and place it at
-> `data/new_data.xlsx`. See `data/README.md`. The data-source citation still needs to be filled
-> in by the authors (see the report's bibliography).
+reference in **https://data.mendeley.com/datasets/yzcwfyrxy2/2**
 
 Key variables used:
 
