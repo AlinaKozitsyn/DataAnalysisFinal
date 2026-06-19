@@ -166,6 +166,54 @@ capture("assumptions", {
   cat("effect, which also replicates across all four independent cluster regressions.\n")
 })
 
+# pooled whole-sample models. since the cluster slopes don't differ (the
+# interaction above was null) we can drop the stratification and fit single
+# models on all 819 students.
+zc2 <- function(x) as.numeric(scale(x))
+
+# Model A: distress only
+m_distress   <- lm(TotalIA ~ totalphq + lonelinesstotal, data = d)
+m_distress_z <- lm(z_iat ~ z_phq + z_lonely, data = d)        # standardized betas
+gA <- broom::glance(m_distress)
+
+# Model B: global additive. age is kept; sleep is left OUT on purpose -- it is a
+# consequence of addiction, not a cause (see the sleep test below).
+m_global   <- lm(TotalIA ~ totalphq + lonelinesstotal + male + exercise_b + bullied_b + age, data = d)
+dz         <- d %>% mutate(across(c(TotalIA, totalphq, lonelinesstotal, age), zc2))
+m_global_z <- lm(TotalIA ~ totalphq + lonelinesstotal + male + exercise_b + bullied_b + age, data = dz)
+gB <- broom::glance(m_global)
+nested_AB  <- anova(m_distress, m_global)   # do the extra variables add anything?
+
+capture("m_distress", {
+  cat(sprintf("Model A  TotalIA ~ depression + loneliness  (n=%d)\n", nrow(d)))
+  print(as.data.frame(broom::tidy(m_distress, conf.int = TRUE) %>% mutate(across(where(is.numeric), ~round(., 4)))))
+  cat(sprintf("R2=%.3f adjR2=%.3f RSE=%.2f F(%d,%d)=%.1f\n", gA$r.squared, gA$adj.r.squared, gA$sigma, gA$df, gA$df.residual, gA$statistic))
+  cat(sprintf("std betas: depression=%.3f  loneliness=%.3f\n", coef(m_distress_z)["z_phq"], coef(m_distress_z)["z_lonely"]))
+})
+capture("m_global", {
+  cat("Model B  global additive  TotalIA ~ depression + loneliness + male + exercise + bullied + age\n")
+  print(as.data.frame(broom::tidy(m_global, conf.int = TRUE) %>% mutate(across(where(is.numeric), ~round(., 4)))))
+  cat(sprintf("R2=%.3f adjR2=%.3f RSE=%.2f F(%d,%d)=%.1f\n", gB$r.squared, gB$adj.r.squared, gB$sigma, gB$df, gB$df.residual, gB$statistic))
+  cat("standardized betas (continuous per +1 SD; binaries are category contrasts):\n"); print(round(coef(m_global_z)[-1], 3))
+  cat("\nnested F -- does adding sex+exercise+bullied+age beat distress-only?\n"); print(nested_AB)
+})
+
+# sleep test: is sleep DOWNSTREAM of addiction (more IAT -> less sleep)? this is
+# why sleep is left out as a predictor of IAT.
+m_sleep       <- lm(sleep_h ~ TotalIA, data = d)
+m_sleep_adj   <- lm(sleep_h ~ TotalIA + age + male, data = d)
+sleep_by_band <- d %>% group_by(iat_band) %>%
+  summarise(n = n(), mean_sleep = mean(sleep_h), mean_IAT = mean(TotalIA), .groups = "drop")
+capture("sleep_test", {
+  cat("Does more internet addiction predict LESS sleep?  sleep_h ~ TotalIA\n")
+  print(as.data.frame(broom::tidy(m_sleep, conf.int = TRUE) %>% mutate(across(where(is.numeric), ~round(., 5)))))
+  cat(sprintf("cor(TotalIA, sleep) = %.3f ; per +10 IAT points = %.3f h of sleep\n",
+              cor(d$TotalIA, d$sleep_h), 10 * coef(m_sleep)["TotalIA"]))
+  cat("with age + sex controlled, the IAT coefficient:\n")
+  print(as.data.frame(broom::tidy(m_sleep_adj, conf.int = TRUE) %>% filter(term == "TotalIA") %>% mutate(across(where(is.numeric), ~round(., 5)))))
+  cat("\nmean sleep (h) by IAT band:\n"); print(as.data.frame(sleep_by_band %>% mutate(across(where(is.numeric), ~round(., 2)))))
+})
+
 # forecast: logistic regression with a 70/30 split stratified by cluster
 set.seed(42)   # reseed right before the split so the split is reproducible
 split_idx <- d %>% mutate(.row = row_number()) %>% group_by(group4) %>%
@@ -229,6 +277,15 @@ saveRDS(list(
   cor_mat = cor_mat, cl_coef = cl_coef, cl_coef_z = cl_coef_z, cl_glance = cl_glance,
   interaction = list(F = int_test$F[2], df1 = int_test$Df[2], df2 = int_test$Res.Df[2], p = int_test$`Pr(>F)`[2]),
   pred_cor = pred_cor,
+  m_distress = list(tidy = broom::tidy(m_distress, conf.int = TRUE), glance = gA,
+                    beta_dep = unname(coef(m_distress_z)["z_phq"]), beta_lon = unname(coef(m_distress_z)["z_lonely"])),
+  m_global = list(tidy = broom::tidy(m_global, conf.int = TRUE), glance = gB,
+                  z = broom::tidy(m_global_z, conf.int = TRUE) %>% filter(term != "(Intercept)")),
+  nested_AB = list(F = nested_AB$F[2], df1 = nested_AB$Df[2], df2 = nested_AB$Res.Df[2],
+                   p = nested_AB$`Pr(>F)`[2], r2_A = gA$r.squared, r2_B = gB$r.squared),
+  sleep_test = list(tidy = broom::tidy(m_sleep, conf.int = TRUE),
+                    adj = broom::tidy(m_sleep_adj, conf.int = TRUE) %>% filter(term == "TotalIA"),
+                    cor = cor(d$TotalIA, d$sleep_h), by_band = sleep_by_band),
   or_tab = or_tab, auc_test = auc_test, cm = cm,
   metrics = c(acc = acc, base_acc = base_acc, sens = sens, spec = spec, prec = prec, f1 = f1,
               test_n = nrow(test), test_pos = mean(test$addicted)),

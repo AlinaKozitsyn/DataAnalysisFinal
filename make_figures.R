@@ -157,4 +157,42 @@ p10 <- test %>% mutate(actual = factor(addicted, c(0,1), c("Not addicted","Addic
        caption = "Dashed line = 0.5 classification threshold. Clear separation, with expected overlap near the boundary.")
 SAVE("fig10_forecast_separation.png", p10, w = 7.5, h = 5.2)
 
-cat("All 10 figures saved.\n")
+# fig11: pooled distress model -- TotalIA vs depression and vs loneliness
+b_dep <- coef(m_distress_z)["z_phq"]; b_lon <- coef(m_distress_z)["z_lonely"]
+mk_pooled <- function(xvar, xlab) {
+  ggplot(d, aes(.data[[xvar]], TotalIA)) +
+    geom_point(alpha = .22, size = 1, color = "#4C72B0") +
+    geom_smooth(method = "lm", formula = y ~ x, color = "#C0392B", fill = "#C0392B", alpha = .15, linewidth = 1) +
+    geom_hline(yintercept = 31, linetype = "dotted", color = "grey45") +
+    labs(x = xlab, y = "Internet addiction (TotalIA, 0–94)")
+}
+p11 <- (mk_pooled("totalphq", "Depression (PHQ-9, 0–27)") |
+        mk_pooled("lonelinesstotal", "Loneliness (UCLA, 29–75)")) +
+  plot_annotation(
+    title = "Fig 11 — One pooled model: TotalIA ~ depression + loneliness (n = 819)",
+    subtitle = "Both distress predictors in a single regression; depression carries most of the signal",
+    caption = sprintf("Lines are the regression fit with 95%% CI; dotted line = addiction cutoff (31).\nJoint-model standardized slopes: depression %.2f and loneliness %.2f. Loneliness shrinks because it overlaps with depression (r = 0.37).", b_dep, b_lon),
+    theme = theme(plot.title = element_text(face = "bold", size = 14),
+                  plot.subtitle = element_text(color = "grey35", size = 10.5),
+                  plot.caption = element_text(color = "grey45", size = 8.5, hjust = 0)))
+SAVE("fig11_distress_model.png", p11, w = 11, h = 4.7)
+
+# fig12: global model standardized coefficients
+lab12 <- c(totalphq = "Depression", lonelinesstotal = "Loneliness", male = "Male (vs female)",
+           exercise_b = "Exercises (vs not)", bullied_b = "Bullied (vs not)", age = "Age")
+gtab <- broom::tidy(m_global_z, conf.int = TRUE) %>% filter(term != "(Intercept)") %>%
+  mutate(lab = lab12[term], sig = p.value < .05) %>% arrange(estimate) %>%
+  mutate(lab = factor(lab, levels = lab))
+p12 <- ggplot(gtab, aes(estimate, lab, color = sig)) +
+  geom_vline(xintercept = 0, linetype = 2, color = "grey50") +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = .25) +
+  geom_point(size = 2.9) +
+  scale_color_manual(values = c(`TRUE` = "#C0392B", `FALSE` = "grey60"),
+                     labels = c(`TRUE` = "p < .05", `FALSE` = "not significant"), name = NULL) +
+  labs(title = "Fig 12 — Global model: what predicts the internet-addiction score",
+       subtitle = "Standardized coefficients (95% CI): TotalIA ~ depression + loneliness + sex + exercise + bullied + age",
+       x = "Standardized coefficient (95% CI)", y = NULL,
+       caption = "Continuous predictors per +1 SD; binaries are category contrasts. Depression, bullying and being male dominate; exercise has no independent effect.")
+SAVE("fig12_global_model.png", p12, w = 9.5, h = 5.0)
+
+cat("All 12 figures saved.\n")

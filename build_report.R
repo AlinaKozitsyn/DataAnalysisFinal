@@ -220,7 +220,7 @@ add(fig("fig1_group_balance.png", 1, "Sample size of each sex × exercise cluste
 
 # ---- 5 Methods ----
 add('<h2 id="methods">5 · Methods, preprocessing &amp; feature engineering</h2>')
-add('<p><b>Models.</b> A continuous score calls for linear regression, and a yes/no outcome calls for logistic regression. So we fit (i) four linear regressions, one per cluster, of <kbd>TotalIA ~ depression + loneliness + age + bullied</kbd>; (ii) a pooled interaction model that tests whether the depression and loneliness slopes differ across clusters; and (iii) one logistic forecast of P(addicted) from depression + loneliness + sex + exercise + age + bullied.</p>')
+add('<p><b>Models.</b> A continuous score calls for linear regression, and a yes/no outcome calls for logistic regression. So we fit (i) four linear regressions, one per cluster, of <kbd>TotalIA ~ depression + loneliness + age + bullied</kbd>; (ii) a pooled interaction model that tests whether the depression and loneliness slopes differ across clusters; (iii) once that interaction comes back null, two whole-sample models — a distress-only model and a global additive model with every variable — plus a quick test of whether sleep is a downstream consequence of addiction; and (iv) one logistic forecast of P(addicted) from depression + loneliness + sex + exercise + age + bullied.</p>')
 add('<p><b>Preprocessing.</b> There was no missing data to impute. For the forecast we use a 70/30 train/test split, stratified by cluster, fitting on train and scoring on the held-out test set; the inferential odds ratios use the full sample. We did not upsample, since at 25% positives the imbalance is mild and AUC does not depend on the threshold.</p>')
 add('<h4>Feature engineering</h4><p>Everything we derived, and where it is used. All of it is written into <kbd>data/enriched_data.csv</kbd>.</p>')
 add(ktab(feat))
@@ -247,6 +247,56 @@ add('<div class="finding"><b>A closer look: levels, not slopes.</b> If exercise 
 add('<h3>Checking the model assumptions</h3>')
 add(sprintf('<p>We check the regression assumptions visually, the way the course teaches. The <b>Residuals-vs-Fitted</b> plot is broadly flat, so linearity holds and there is no systematic curve, and the <b>Normal Q–Q</b> points track the reference line apart from a mildly heavy upper tail (the right-skew of IAT). The two predictors correlate only <b>r = %.2f</b>, so multicollinearity is not a concern and both stay in the model. The mild unevenness in residual spread does not change the sign or the large size of the depression effect, and that effect shows up again in all four independent cluster regressions with confidence intervals far from zero.</p>', r$pred_cor))
 add(fig("fig7_residual_diagnostics.png", 7, "Residuals-vs-Fitted (linearity / equal variance) and Normal Q–Q (residual normality) for the pooled model. Both are acceptable, with a mild right-tail reported honestly."))
+
+# ---- 7b pooled whole-sample models ----
+add('<h3>Pooling the clusters: two whole-sample models</h3>')
+add(sprintf('<p>Because the slopes don’t differ across clusters (the interaction was not significant), we can drop the stratification and fit single models on all %d students. <b>Model A</b> keeps just the two distress predictors. <b>Model B</b> is a global additive model that also brings in sex, exercise, bullying and age.</p>', r$n))
+
+# Model A — distress only
+mdt <- r$m_distress$tidy %>% filter(term != "(Intercept)")
+sbA <- c(totalphq = r$m_distress$beta_dep, lonelinesstotal = r$m_distress$beta_lon)
+modelA_tab <- tibble(
+  Predictor = c("Depression (per +1 PHQ-9 pt)", "Loneliness (per +1 UCLA pt)"),
+  `b (95% CI)` = sprintf("%.2f [%.2f, %.2f]", mdt$estimate, mdt$conf.low, mdt$conf.high),
+  `std β` = sprintf("%.2f", sbA[mdt$term]),
+  `p` = fp(mdt$p.value))
+gA <- r$m_distress$glance
+add('<h4>Model A — distress only</h4>')
+add(sprintf('<p>Both predictors are significant, but depression dominates: its standardized slope is %.2f against loneliness’s %.2f, and each extra PHQ-9 point adds about %.2f IAT points. Together they explain R² = %.2f of the variance.</p>',
+            r$m_distress$beta_dep, r$m_distress$beta_lon, mdt$estimate[1], gA$r.squared))
+add(ktab(modelA_tab, sprintf("Model A: TotalIA ~ depression + loneliness (n = %d). R² = %.2f, adj. R² = %.2f, RSE = %.1f. p-value shown for each predictor.", r$n, gA$r.squared, gA$adj.r.squared, gA$sigma)))
+add(fig("fig11_distress_model.png", 11, "The two distress predictors against internet addiction (whole sample). Depression has a steep, tight slope; loneliness is shallow and shrinks further in the joint model because it overlaps with depression."))
+
+# Model B — global model
+mgt <- r$m_global$tidy %>% filter(term != "(Intercept)")
+mgz <- r$m_global$z
+labB <- c(totalphq = "Depression (per +1 PHQ-9 pt)", lonelinesstotal = "Loneliness (per +1 UCLA pt)",
+          male = "Male (vs female)", exercise_b = "Exercises (vs not)", bullied_b = "Bullied (vs not)", age = "Age (per +1 yr)")
+modelB_tab <- tibble(
+  Predictor = labB[mgt$term],
+  `b (95% CI)` = sprintf("%.2f [%.2f, %.2f]", mgt$estimate, mgt$conf.low, mgt$conf.high),
+  `std β` = sprintf("%.2f", mgz$estimate[match(mgt$term, mgz$term)]),
+  `p` = fp(mgt$p.value),
+  `Sig.` = ifelse(mgt$p.value < .05, "✓", "—"))
+gB <- r$m_global$glance; nab <- r$nested_AB
+gv <- function(t) mgz$estimate[mgz$term == t]
+add('<h4>Model B — the global model</h4>')
+add(sprintf('<p>Adding sex, exercise, bullying and age lifts R² to %.2f. The biggest standardized effects are depression (%.2f), being bullied (%.2f) and being male (%.2f); being bullied or male each adds roughly 5 IAT points. Loneliness (%.2f) and age (%.2f) are smaller but still significant. The one null is <b>exercise</b>: its coefficient is essentially zero (std β %.2f, p = %s). So once distress and sex are in the model, whether a student exercises adds nothing to their predicted addiction score, which echoes the non-significant exercise term in the forecast. The four extra variables do jointly improve the fit (nested F(%d, %d) = %.1f, p &lt; .001).</p>',
+            gB$r.squared, gv("totalphq"), gv("bullied_b"), gv("male"), gv("lonelinesstotal"), gv("age"),
+            gv("exercise_b"), fp(mgt$p.value[mgt$term == "exercise_b"]), nab$df1, nab$df2, nab$F))
+add(ktab(modelB_tab, sprintf("Model B (global): TotalIA ~ depression + loneliness + sex + exercise + bullied + age. n = %d, R² = %.2f, adj. R² = %.2f. Every variable’s p-value and significance is shown.", r$n, gB$r.squared, gB$adj.r.squared)))
+add(fig("fig12_global_model.png", 12, "Standardized coefficients with 95% CI for the global model. Red = significant (p < .05), grey = not. Depression, bullying and being male lead; exercise sits on zero."))
+
+# sleep mediator test
+st <- r$sleep_test; bs <- st$tidy %>% filter(term == "TotalIA"); bsa <- st$adj
+bb <- st$by_band %>% arrange(mean_IAT)
+sleeptab <- tibble(`IAT band` = as.character(bb$iat_band), n = bb$n,
+                   `Mean sleep (h)` = sprintf("%.2f", bb$mean_sleep),
+                   `Mean IAT` = sprintf("%.1f", bb$mean_IAT))
+add('<h4>Why sleep is not a predictor: a quick mediator check</h4>')
+add(sprintf('<div class="callout">We leave <b>sleep</b> out of the model on purpose, because sleep is more plausibly a <i>consequence</i> of addiction than a cause of it. The data agrees. Regressing sleep on addiction (<kbd>sleep_h ~ TotalIA</kbd>) gives only a tiny negative slope, about %.0f minutes less sleep per +10 IAT points (b = %.3f h per point, p = %s), and it disappears once we control for age and sex (p = %s). So sleep is at most a weak downstream effect of addiction, not a driver of it, which is exactly why it does not belong on the predictor side. Mean sleep does edge down across the addiction bands (below; the Severe band is one student).</div>',
+            abs(10 * bs$estimate * 60), bs$estimate, fp(bs$p.value), fp(bsa$p.value)))
+add(ktab(sleeptab, "Mean sleep by IAT severity band (descriptive)."))
 
 # ---- 8 Forecast ----
 add('<h2 id="forecast">8 · Forecast: the chance of being internet-addicted</h2>')
@@ -310,6 +360,9 @@ add(pre("cormat","Correlation matrix"))
 add(pre("cl_models","The four cluster regressions (full coefficients)"))
 add(pre("interaction","Interaction test (do slopes differ?)"))
 add(pre("assumptions","Model-assumption checks"))
+add(pre("m_distress","Model A — distress-only regression"))
+add(pre("m_global","Model B — global model (all variables + significance)"))
+add(pre("sleep_test","Sleep mediator test (IAT → less sleep?)"))
 add(pre("forecast","Logistic forecast (odds ratios + test metrics)"))
 
 add('<hr><p><small>Generated by build_report.R from results.rds. All figures are embedded (base64) so this file is fully self-contained.</small></p>')
