@@ -74,8 +74,8 @@ feat <- tibble(
     "z-scored versions of the scales (comparable slopes)",
     "z(depression) + z(loneliness): a single standardized distress index"),
   `Used for` = c("stratification (the 4 regressions)","logistic predictors / dummies",
-                 "EDA / correlation matrix","EDA / 'raw hours' contrast","descriptive prevalence (Fig 8)",
-                 "forecast target","sensitivity analysis","descriptive","standardized betas (Fig 6)","optional composite"))
+                 "EDA / correlation matrix","EDA / 'raw hours' contrast","descriptive prevalence (Fig 4)",
+                 "forecast target","sensitivity analysis","descriptive","standardized betas (Fig 7)","optional composite"))
 
 hyp <- tibble(
   `#` = c("H1a","H1b","H2","H3","H4","H5","—"),
@@ -91,12 +91,12 @@ hyp <- tibble(
                 "screen-time floor-effect literature","predictive aim","(post-hoc)"),
   Verdict = c(
     sprintf('<span class="ok">CONFIRMED</span> — std β %.2f–%.2f, all p &lt; .001', min(zdep$std_beta), max(zdep$std_beta)),
-    '<span class="no">NOT supported</span> — near zero once depression is in; sig. only for Female·Exercises',
+    '<span class="mid">PARTIAL</span> — small but significant in the pooled models (β 0.11–0.13, p&lt;.001); near zero in 3 of 4 individual clusters',
     sprintf('<span class="no">CONTRADICTED</span> — interaction F(%d,%d)=%.2f, p=%.2f (slopes equal)', intd1, intd2, intF, intp),
     sprintf('<span class="ok">CONFIRMED</span> — %.0f%% vs %.0f%%; male OR=%.2f, p=%s', max(cp$addicted_pct), min(cp$addicted_pct), orv("male")$estimate, sub("^&lt; ","<",fp(orv("male")$p.value))),
     '<span class="ok">CONFIRMED</span> — IAT tracks depression at r=0.53; social-media hours track it only 0.27',
     sprintf('<span class="mid">PARTIAL</span> — AUC=%.2f, accuracy=%.2f &gt; %.2f baseline', r$auc_test, m["acc"], m["base_acc"]),
-    '<span class="ok">SUPPORTED</span> — Fig 6 (parallel slopes) + Fig 8 (different heights)'))
+    '<span class="ok">SUPPORTED</span> — Fig 7 (parallel slopes) + Fig 4 (different heights)'))
 
 # build the HTML, one add() call per block
 H <- c()
@@ -151,7 +151,7 @@ add('<div class="meta"><b>Authors:</b> Noam Avizmil · Tomer Golshani · May Man
 
 # ---- abstract ----
 add('<h2 id="abstract">Abstract</h2>')
-add(sprintf('<p class="lead">We ask whether depression and loneliness turn into <i>perceived internet addiction</i> (Internet Addiction Test, IAT) differently depending on a student’s sex and whether they exercise. Across 819 adolescents we fit one linear regression of the IAT score per cluster (4 clusters = sex × exercise) and a logistic regression that forecasts the <i>chance</i> of being internet-addicted (IAT ≥ 31, the Young cutoff). <b>Depression is a strong, significant predictor of internet addiction in every cluster</b> (standardized β %.2f–%.2f, all p &lt; .001), explaining %.0f–%.0f%% of the variance, while loneliness adds almost nothing once depression is in the model. Contrary to our hypothesis, exercise does not flatten the distress-to-addiction slope (cluster interaction p = %.2f). What the clusters differ in is level: %.0f%% of non-exercising boys score as addicted, versus about %.0f%% of girls. The forecast model reaches <b>AUC = %.2f</b> (accuracy %.2f vs %.2f baseline), with depression, being male, age and being bullied all raising the odds. So the short version is that distress hits every subgroup about equally hard, but non-exercising boys start from a much higher baseline.</p>',
+add(sprintf('<p class="lead">We ask whether depression and loneliness turn into <i>perceived internet addiction</i> (Internet Addiction Test, IAT) differently depending on a student’s sex and whether they exercise. Across 819 adolescents we fit one linear regression of the IAT score per cluster (4 clusters = sex × exercise) and a logistic regression that forecasts the <i>chance</i> of being internet-addicted (IAT ≥ 31, the Young cutoff). <b>Depression is a strong, significant predictor of internet addiction in every cluster</b> (standardized β %.2f–%.2f, all p &lt; .001), explaining %.0f–%.0f%% of the variance, while loneliness is a much weaker predictor — small but statistically significant in the pooled models, and near zero within the individual clusters. Contrary to our hypothesis, exercise does not flatten the distress-to-addiction slope (cluster interaction p = %.2f). What the clusters differ in is level: %.0f%% of non-exercising boys score as addicted, versus about %.0f%% of girls. The forecast model reaches <b>AUC = %.2f</b> (accuracy %.2f vs %.2f baseline), with depression, being male, age and being bullied all raising the odds. So the short version is that distress hits every subgroup about equally hard, but non-exercising boys start from a much higher baseline.</p>',
             min(zdep$std_beta), max(zdep$std_beta), 100*min(gi$r.squared), 100*max(gi$r.squared),
             intp, max(cp$addicted_pct), mean(cp$addicted_pct[1:2]), r$auc_test, m["acc"], m["base_acc"]))
 
@@ -163,8 +163,8 @@ add('<h2 id="toc">Contents</h2><div class="toc">',
     '<a href="#data">4 · Data overview &amp; how it was collected</a>',
     '<a href="#methods">5 · Methods, preprocessing &amp; feature engineering</a>',
     '<a href="#eda">6 · Exploratory data analysis</a>',
-    '<a href="#explore">7 · Exploratory results: the 4 cluster regressions</a>',
-    '<a href="#forecast">8 · Forecast: the chance of being addicted</a>',
+    '<a href="#explore">7 · Exploratory results: the four cluster regressions</a>',
+    '<a href="#forecast">8 · Forecast: the chance of being internet-addicted</a>',
     '<a href="#verdicts">9 · Hypotheses vs. results</a>',
     '<a href="#limits">10 · Limitations &amp; future work</a>',
     '<a href="#repro">11 · References &amp; reproducibility</a>',
@@ -197,9 +197,9 @@ add('<h4>1. Outcome = perceived addiction (IAT), not "hours online"</h4>',
 add('<h4>2. Forecast = the <i>chance</i> of being addicted (logistic), not the raw score</h4>',
     '<p>For prediction we model <b>P(internet-addicted)</b> with logistic regression. "Addicted" = <b>IAC ≥ 2 (IAT ≥ 31)</b>, the standard Young cutoff for "problems beyond normal use" (25% of students; well-distributed across clusters). We re-checked everything against a stricter cutoff (IAC ≥ 3, IAT ≥ 50; 10%) as a robustness lens.</p>')
 add('<h4>3. Predictors and controls</h4>',
-    '<p>Our main predictors are depression and loneliness. The cluster variables (sex, exercise) are held fixed by stratification in the 4 linear models, and they enter as predictors in the single pooled forecast. For controls we use age and bullied, since both tend to raise distress and online withdrawal. We left out sleep on purpose, because it is a plausible mediator: addiction leads to less sleep, so adjusting for it would bias the effect. We also dropped the many app and device flags, which add noise and would lead to the over-slicing our proposal feedback warned us about.</p>')
+    '<p>Our main predictors are depression and loneliness. The cluster variables (sex, exercise) are held fixed by stratification in the 4 linear models, and they enter as predictors in the single pooled forecast. For controls we use age and bullied, since both tend to raise distress and online withdrawal. We left out sleep on purpose: it is plausibly a downstream consequence of addiction (more addiction → less sleep, a post-treatment variable), so putting it on the predictor side would bias the effect. We check this directly in §7. We also dropped the many app and device flags, which add noise and would lead to the over-slicing our proposal feedback warned us about.</p>')
 add('<h4>4. Methods we kept at course level</h4>',
-    '<p>We check the model assumptions the way the course teaches them, that is, visually (Residuals-vs-Fitted and Normal Q–Q, Fig 7) and through the simple correlation between predictors for collinearity (r = ',
+    '<p>We check the model assumptions the way the course teaches them, that is, visually (Residuals-vs-Fitted and Normal Q–Q, Fig 8) and through the simple correlation between predictors for collinearity (r = ',
     sprintf('%.2f', r$pred_cor), '). We did not use a Youden-optimal threshold, the Breusch–Pagan test, or robust (HC3) standard errors. Those were beyond the syllabus. So where heteroscedasticity shows up we report it honestly, and we lean on the fact that the depression effect shows up again in all four independent cluster regressions, with CIs far from zero.</p>')
 add('<h4>5. Reproducibility</h4>',
     '<p>One Google-Form export gives one clean table (819×91, zero missing). All randomness is seeded with <kbd>set.seed(42)</kbd>, including a seed placed right before the train/test split, so the forecast metrics reproduce even if the code upstream changes.</p>')
@@ -209,13 +209,13 @@ add('<h2 id="data">4 · Data overview &amp; how it was collected</h2>')
 add('<p><b>Source.</b> Mahmud, Siddik, Arefin &amp; Rahman (2024), <i>"A data set exploring the link and associated factors of internet addiction, loneliness, and depression among adolescents in Bangladesh"</i>, Mendeley Data V2 (<a href="https://doi.org/10.17632/yzcwfyrxy2.2">doi:10.17632/yzcwfyrxy2.2</a>, CC&nbsp;BY&nbsp;4.0). The <kbd>Data in Brief … Google Forms.pdf</kbd> in our repo is the <i>survey instrument</i>, not a paper.</p>')
 add('<p><b>Entities and size.</b> One row is one school or college student. There are <b>n = 819</b> adolescents, ages <b>13–19</b> (mean about 15.8), from Bangladesh (Sylhet division, per the authors’ companion paper), collected by Google Forms behind a voluntary informed-consent gate. The data is cross-sectional, with <b>no missing values</b> in any of the 91 columns. Sampling was by convenience (non-probability), so the sample is not representative. It skews <b>65% female</b> and toward ages 14–16.</p>')
 add('<p><b>How the key variables were measured (validated instruments).</b></p><ul>',
-    '<li><b>Internet Addiction Test</b> (IAT; Young, 1998) — 20 items → <kbd>TotalIA</kbd> (0–94). Bands: Normal 0–30, Mild 31–49, Moderate 50–79, Severe 80+.</li>',
+    '<li><b>Internet Addiction Test</b> (IAT; Young, 1998) — 20 items → <kbd>TotalIA</kbd> (0–94). Nominal bands: Normal 0–30, Mild 31–49, Moderate 50–79, Severe 80+ (in this sample scores top out at 94).</li>',
     '<li><b>PHQ-9 depression</b> (Kroenke et&nbsp;al., 2001) — 9 items → <kbd>totalphq</kbd> (0–27).</li>',
     '<li><b>UCLA Loneliness Scale v3</b> (Russell, 1996) — 20 items → <kbd>lonelinesstotal</kbd> (observed 29–75).</li>',
     '<li>Plus ~36 self-report items: demographics, who they live with, device, sleep, exercise, sports, bullying, friendship and parent relationships, social-media tenure and daily time.</li></ul>')
 add('<div class="callout"><b>Data-quality sanity check.</b> The UCLA score requires reverse-coding of half its items, so we checked that it behaves correctly. <kbd>lonelinesstotal</kbd> correlates <i>positively</i> with depression (r = 0.37) and addiction (r = 0.31), which is what a valid loneliness score should do, so the scoring direction is sound.</div>')
 add('<p><b>Outcomes.</b> Exploratory Y = <kbd>TotalIA</kbd> (continuous). Forecast Y = <kbd>addicted</kbd> = 1 if IAT ≥ 31.</p>')
-add('<p><b>Class balance.</b> The four clusters are unbalanced (largest to smallest is about 2.8:1), and the addiction outcome is 25% positive, which is balanced enough to model. The smallest cluster, non-exercising boys (n = 101), carries the widest confidence intervals, and we flag this throughout.</p>')
+add('<p><b>Class balance.</b> The four clusters are unbalanced (largest to smallest is about 2.8:1; Fig 1), and the addiction outcome is 25% positive, which is balanced enough to model. The smallest cluster, non-exercising boys (n = 101), carries the widest confidence intervals, and we flag this throughout.</p>')
 add(fig("fig1_group_balance.png", 1, "Sample size of each sex × exercise cluster. The design is observational and unbalanced; non-exercising boys are the smallest group."))
 
 # ---- 5 Methods ----
@@ -227,26 +227,26 @@ add(ktab(feat))
 
 # ---- 6 EDA ----
 add('<h2 id="eda">6 · Exploratory data analysis</h2>')
-add('<p>The three scales behave very differently. Internet addiction is strongly right-skewed, with most students near the floor (skew about 1.0). Depression uses its full range, and loneliness is the most symmetric of the three. The right skew of IAT, together with the fact that about 75% sit below the addiction cutoff, is why the forecast uses a binary outcome.</p>')
+add('<p>The three scales behave very differently. Internet addiction is strongly right-skewed, with most students near the floor (skew about 1.0; Fig 2). Depression uses its full range, and loneliness is the most symmetric of the three. The right skew of IAT, together with the fact that about 75% sit below the addiction cutoff, is why the forecast uses a binary outcome.</p>')
 add(fig("fig2_distributions.png", 2, "Distributions of the three core scales, with means (dashed) and the IAT addiction cutoff (red). IAT is heavily right-skewed."))
 add('<p><b>Depression correlates with internet addiction at r = 0.53</b>, far ahead of loneliness (0.31). Social-media hours correlate with addiction just as strongly (also 0.53), but that is expected, since hours and the IAT both partly measure internet use. What matters for us is that hours barely track <i>distress</i> (only r = 0.27 with depression), so they are a poor stand-in for mental health. Depression and loneliness correlate only modestly with each other (r = 0.37), so both can sit in the same model without collinearity trouble.</p>')
 add(fig("fig3_correlation_matrix.png", 3, "Pearson correlations among the focal numeric features. Depression and social-media hours both correlate 0.53 with addiction, but hours barely track distress (0.27 with depression)."))
 add('<p>Splitting by cluster shows the pattern that motivated the project: <b>addiction prevalence more than doubles</b> from girls (about 19–20%) to non-exercising boys (about 45%).</p>')
-add(fig("fig8_addiction_prevalence_by_cluster.png", 8, "Observed share of students scoring as internet-addicted (IAT ≥ 31) per cluster. Non-exercising boys are the clear high-risk group."))
+add(fig("fig4_addiction_prevalence_by_cluster.png", 4, "Observed share of students scoring as internet-addicted (IAT ≥ 31) per cluster. Non-exercising boys are the clear high-risk group."))
 
 # ---- 7 Exploratory results ----
 add('<h2 id="explore">7 · Exploratory results: the four cluster regressions</h2>')
-add('<p>In every cluster, <b>depression is a strong, highly significant predictor</b> of the internet-addiction score. Each extra PHQ-9 point is worth roughly <b>1.2–1.5 IAT points</b>. Loneliness is weak. Once depression is in the model its standardized slope sits near zero and is statistically significant only for girls who exercise. Each model explains a meaningful 25–34% of the variance.</p>')
+add('<p>In every cluster, <b>depression is a strong, highly significant predictor</b> of the internet-addiction score, with a clear positive slope in all four panels (Fig 5). Each extra PHQ-9 point is worth roughly <b>1.2–1.5 IAT points</b>. Loneliness is much weaker (Fig 6): within the individual clusters its standardized slope sits near zero and is significant only for girls who exercise, though in the pooled models below — with the full sample’s power — it turns out small but significant. Each model explains a meaningful 25–34% of the variance.</p>')
 add(ktab(clreg, "Per-cluster regression of TotalIA on depression + loneliness (+ age, bullied). std β = standardized slope; CIs are 95%."))
-add(fig("fig4_iat_vs_depression_by_cluster.png", 4, "Internet addiction vs depression within each cluster, with fitted line and 95% CI. The positive slope is clear and similar in all four panels."))
-add(fig("fig5_iat_vs_loneliness_by_cluster.png", 5, "Internet addiction vs loneliness within each cluster. Slopes are shallow, so loneliness carries little independent signal."))
-add(fig("fig6_cluster_coefficients.png", 6, "Standardized depression (red) and loneliness (blue) slopes per cluster, 95% CI. Depression is strong and significant everywhere; loneliness overlaps zero in three of four clusters."))
+add(fig("fig5_iat_vs_depression_by_cluster.png", 5, "Internet addiction vs depression within each cluster, with fitted line and 95% CI. The positive slope is clear and similar in all four panels."))
+add(fig("fig6_iat_vs_loneliness_by_cluster.png", 6, "Internet addiction vs loneliness within each cluster. Slopes are shallow, so loneliness carries little independent signal."))
+add(fig("fig7_cluster_coefficients.png", 7, "Standardized depression (red) and loneliness (blue) slopes per cluster, 95% CI. Depression is strong and significant everywhere; loneliness overlaps zero in three of four clusters."))
 add(sprintf('<div class="finding"><b>Do the slopes differ across clusters?</b> No. The pooled interaction test is <b>not significant: F(%d,&nbsp;%d) = %.2f, p = %.2f</b>. Statistically, depression pushes internet addiction just as hard for non-exercising boys as it does for exercising girls. This contradicts our hypothesis (H2) that exercise buffers the distress-to-addiction link.</div>', intd1, intd2, intF, intp))
-add('<div class="finding"><b>A closer look: levels, not slopes.</b> If exercise doesn’t flatten the slope, why are non-exercising boys so much more addicted (Fig 8)? The reason is that the clusters differ in where they start, not in how steeply distress bites. Non-exercising boys carry the highest mean depression (10.2 vs about 7.7–8.0) and a higher male baseline, so the same slope sitting on a higher intercept lands many more of them above the addiction line. In practical terms, distress drives addiction across the board, while sex and inactivity set the baseline risk. Prevention should target the high-baseline subgroup, but the underlying mechanism, distress, is shared by everyone.</div>')
+add('<div class="finding"><b>A closer look: levels, not slopes.</b> If exercise doesn’t flatten the slope, why are non-exercising boys so much more addicted (Fig 4)? The reason is that the clusters differ in where they start, not in how steeply distress bites. Non-exercising boys carry the highest mean depression (10.2 vs 7.7–8.0 for girls and 8.7 for exercising boys) and a higher male baseline, so the same slope sitting on a higher intercept lands many more of them above the addiction line. In practical terms, distress drives addiction across the board, while sex and inactivity set the baseline risk. Prevention should target the high-baseline subgroup, but the underlying mechanism, distress, is shared by everyone.</div>')
 
 add('<h3>Checking the model assumptions</h3>')
 add(sprintf('<p>We check the regression assumptions visually, the way the course teaches. The <b>Residuals-vs-Fitted</b> plot is broadly flat, so linearity holds and there is no systematic curve, and the <b>Normal Q–Q</b> points track the reference line apart from a mildly heavy upper tail (the right-skew of IAT). The two predictors correlate only <b>r = %.2f</b>, so multicollinearity is not a concern and both stay in the model. The mild unevenness in residual spread does not change the sign or the large size of the depression effect, and that effect shows up again in all four independent cluster regressions with confidence intervals far from zero.</p>', r$pred_cor))
-add(fig("fig7_residual_diagnostics.png", 7, "Residuals-vs-Fitted (linearity / equal variance) and Normal Q–Q (residual normality) for the pooled model. Both are acceptable, with a mild right-tail reported honestly."))
+add(fig("fig8_residual_diagnostics.png", 8, "Residuals-vs-Fitted (linearity / equal variance) and Normal Q–Q (residual normality) for the pooled model. Both are acceptable, with a mild right-tail reported honestly."))
 
 # ---- 7b pooled whole-sample models ----
 add('<h3>Pooling the clusters: two whole-sample models</h3>')
@@ -262,10 +262,10 @@ modelA_tab <- tibble(
   `p` = fp(mdt$p.value))
 gA <- r$m_distress$glance
 add('<h4>Model A — distress only</h4>')
-add(sprintf('<p>Both predictors are significant, but depression dominates: its standardized slope is %.2f against loneliness’s %.2f, and each extra PHQ-9 point adds about %.2f IAT points. Together they explain R² = %.2f of the variance.</p>',
+add(sprintf('<p>Both predictors are significant, but depression dominates (Fig 9): its standardized slope is %.2f against loneliness’s %.2f, and each extra PHQ-9 point adds about %.2f IAT points. Together they explain R² = %.2f of the variance.</p>',
             r$m_distress$beta_dep, r$m_distress$beta_lon, mdt$estimate[1], gA$r.squared))
 add(ktab(modelA_tab, sprintf("Model A: TotalIA ~ depression + loneliness (n = %d). R² = %.2f, adj. R² = %.2f, RSE = %.1f. p-value shown for each predictor.", r$n, gA$r.squared, gA$adj.r.squared, gA$sigma)))
-add(fig("fig11_distress_model.png", 11, "The two distress predictors against internet addiction (whole sample). Depression has a steep, tight slope; loneliness is shallow and shrinks further in the joint model because it overlaps with depression."))
+add(fig("fig9_distress_model.png", 9, "The two distress predictors against internet addiction (whole sample). Depression has a steep, tight slope; loneliness is shallow and shrinks further in the joint model because it overlaps with depression."))
 
 # Model B — global model
 mgt <- r$m_global$tidy %>% filter(term != "(Intercept)")
@@ -281,11 +281,11 @@ modelB_tab <- tibble(
 gB <- r$m_global$glance; nab <- r$nested_AB
 gv <- function(t) mgz$estimate[mgz$term == t]
 add('<h4>Model B — the global model</h4>')
-add(sprintf('<p>Adding sex, exercise, bullying and age lifts R² to %.2f. The biggest standardized effects are depression (%.2f), being bullied (%.2f) and being male (%.2f); being bullied or male each adds roughly 5 IAT points. Loneliness (%.2f) and age (%.2f) are smaller but still significant. The one null is <b>exercise</b>: its coefficient is essentially zero (std β %.2f, p = %s). So once distress and sex are in the model, whether a student exercises adds nothing to their predicted addiction score, which echoes the non-significant exercise term in the forecast. The four extra variables do jointly improve the fit (nested F(%d, %d) = %.1f, p &lt; .001).</p>',
+add(sprintf('<p>Adding sex, exercise, bullying and age lifts R² to %.2f. The biggest standardized effects (Fig 10) are depression (%.2f), being bullied (%.2f) and being male (%.2f); being bullied or male each adds roughly 5 IAT points. Loneliness (%.2f) and age (%.2f) are smaller but still significant. The one null is <b>exercise</b>: its coefficient is essentially zero (std β %.2f, p = %s). So once distress and sex are in the model, whether a student exercises adds nothing to their predicted addiction score, which echoes the non-significant exercise term in the forecast. The four extra variables do jointly improve the fit (nested F(%d, %d) = %.1f, p &lt; .001).</p>',
             gB$r.squared, gv("totalphq"), gv("bullied_b"), gv("male"), gv("lonelinesstotal"), gv("age"),
             gv("exercise_b"), fp(mgt$p.value[mgt$term == "exercise_b"]), nab$df1, nab$df2, nab$F))
-add(ktab(modelB_tab, sprintf("Model B (global): TotalIA ~ depression + loneliness + sex + exercise + bullied + age. n = %d, R² = %.2f, adj. R² = %.2f. Every variable’s p-value and significance is shown.", r$n, gB$r.squared, gB$adj.r.squared)))
-add(fig("fig12_global_model.png", 12, "Standardized coefficients with 95% CI for the global model. Red = significant (p < .05), grey = not. Depression, bullying and being male lead; exercise sits on zero."))
+add(ktab(modelB_tab, sprintf("Model B (global): TotalIA ~ depression + loneliness + sex + exercise + bullied + age. n = %d, R² = %.2f, adj. R² = %.2f, RSE = %.1f. Every variable’s p-value and significance is shown.", r$n, gB$r.squared, gB$adj.r.squared, gB$sigma)))
+add(fig("fig10_global_model.png", 10, "Standardized coefficients with 95% CI for the global model. Red = significant (p < .05), grey = not. Depression, bullying and being male lead; exercise sits on zero."))
 
 # sleep mediator test
 st <- r$sleep_test; bs <- st$tidy %>% filter(term == "TotalIA"); bsa <- st$adj
@@ -302,13 +302,13 @@ add(ktab(sleeptab, "Mean sleep by IAT severity band (descriptive)."))
 add('<h2 id="forecast">8 · Forecast: the chance of being internet-addicted</h2>')
 add('<p>The logistic model predicts the probability that a student is addicted. Reading off the odds ratios, each extra <b>PHQ-9 point raises the odds of addiction by about 19%</b>. Being male, being older, and having been bullied all raise the odds too. Exercise points in a protective direction but is not significant once distress and sex are accounted for.</p>')
 add(ktab(ortab, "Logistic regression for P(internet-addicted). Odds ratios with 95% CIs (full sample)."))
-add(sprintf('<p><b>How well does it forecast?</b> On the held-out test set (n = %d, %.0f%% addicted) the model reaches <b>AUC = %.2f</b>, which is fair-to-good discrimination, and <b>accuracy %.2f</b>, beating the %.2f majority-class baseline. At the default 0.5 cutoff it is cautious, with <b>specificity %.2f</b> (it rarely false-alarms) but <b>sensitivity %.2f</b> (it misses some true cases). That is the trade-off you expect with a 25%%-positive class. Since AUC does not depend on the cutoff, it is the fairer summary of how well the model ranks students.</p>',
+add(sprintf('<p><b>How well does it forecast?</b> On the held-out test set (n = %d, %.0f%% addicted) the model reaches <b>AUC = %.2f</b> (Fig 11), which is fair-to-good discrimination, and <b>accuracy %.2f</b>, beating the %.2f majority-class baseline. At the default 0.5 cutoff it is cautious, with <b>specificity %.2f</b> (it rarely false-alarms) but <b>sensitivity %.2f</b> (it misses some true cases). That is the trade-off you expect with a 25%%-positive class. Since AUC does not depend on the cutoff, it is the fairer summary of how well the model ranks students, and the predicted probabilities clearly separate the two groups (Fig 12).</p>',
             m["test_n"], 100*m["test_pos"], r$auc_test, m["acc"], m["base_acc"], m["spec"], m["sens"]))
 add('<div style="display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start">')
 add('<div style="flex:1;min-width:280px">', as.character(ktab(cmtab, "Confusion matrix (test set, 0.5 threshold).")), '</div>')
 add('<div style="flex:1;min-width:280px">', as.character(ktab(proftab, "Observed vs model-predicted addiction by cluster. †Model P at each cluster’s mean distress.")), '</div></div>')
-add(fig("fig9_roc.png", 9, "ROC curve on the held-out test set. The curve bows well above the chance diagonal."))
-add(fig("fig10_forecast_separation.png", 10, "Predicted probabilities are clearly higher for students who really are addicted, with the expected overlap near the boundary."))
+add(fig("fig11_roc.png", 11, "ROC curve on the held-out test set. The curve bows well above the chance diagonal."))
+add(fig("fig12_forecast_separation.png", 12, "Predicted probabilities are clearly higher for students who really are addicted, with the expected overlap near the boundary."))
 
 # ---- 9 verdicts ----
 add('<h2 id="verdicts">9 · Hypotheses vs. results</h2>')
@@ -322,7 +322,7 @@ add('<h4>Limitations</h4><ul>',
     '<li><b>Convenience sample.</b> 819 Bangladeshi adolescents, 65% female, concentrated at ages 14–16, almost all living with family. The results may not generalize to other ages, countries, or out-of-school youth.</li>',
     '<li><b>Small and unbalanced clusters.</b> Non-exercising boys (n = 101) carry the widest CIs, and the null interaction test has limited power to detect modest slope differences, so "no moderation" really means "no <i>detectable</i> moderation."</li>',
     '<li><b>Self-report and coarse exposure.</b> Screen-time is binned and floor-constrained, exercise is a yes/no with no dose or intensity, and perceived addiction is subjective.</li>',
-    '<li><b>Skew and mild heteroscedasticity.</b> IAT is right-skewed and the residual spread widens at high fitted values (Fig 7). This slightly affects precision, but not the sign or the large size of the depression effect.</li>',
+    '<li><b>Skew and mild heteroscedasticity.</b> IAT is right-skewed and the residual spread widens at high fitted values (Fig 8). This slightly affects precision, but not the sign or the large size of the depression effect.</li>',
     '<li><b>Omitted variables.</b> We did not model socio-economic status, parental mental health, academic pressure or prior clinical history.</li></ul>')
 add('<h4>Future work</h4><ul>',
     '<li><b>Longitudinal data</b> (≥2 waves) to test the depression⇄addiction direction with cross-lagged models.</li>',
