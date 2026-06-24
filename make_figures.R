@@ -21,15 +21,16 @@ p1 <- balance %>% mutate(group4 = factor(group4, levels = clusters)) %>%
   geom_text(aes(label = sprintf("%d\n(%.1f%%)", n, pct)), vjust = -0.2, size = 3.6, lineheight = .9) +
   scale_fill_manual(values = pal, guide = "none") +
   scale_y_continuous(expand = expansion(mult = c(0, .15))) +
-  labs(title = "Fig 1 — The four clusters are unbalanced",
+  labs(title = "Fig 1: The four clusters are unbalanced",
        subtitle = sprintf("n = %d students. Largest:smallest = %.1f:1. Overall 65%% female, 35%% male.", sum(balance$n), max(balance$n)/min(balance$n)),
        x = NULL, y = "Number of students",
-       caption = "Sex × physical-exercise clusters. Male/No-exercise is the smallest group (n=101) — its estimates carry the widest CIs.")
+       caption = "Sex × physical-exercise clusters. Male/No-exercise is the smallest group (n=101), its estimates carry the widest CIs.")
 SAVE("fig1_group_balance.png", p1, h = 5.0)
 
 # Fig 2: histograms of the three main scales
 mk_hist <- function(var, label, binw, vline = NULL, vlab = NULL) {
-  x <- d[[var]]; sk <- mean((x - mean(x))^3) / sd(x)^3
+  x <- d[[var]]
+  sk <- mean((x - mean(x))^3) / sd(x)^3
   g <- ggplot(d, aes(.data[[var]])) +
     geom_histogram(binwidth = binw, fill = "#4C72B0", color = "white", alpha = .85) +
     geom_vline(xintercept = mean(d[[var]]), color = "grey20", linetype = "dashed") +
@@ -41,10 +42,10 @@ mk_hist <- function(var, label, binw, vline = NULL, vlab = NULL) {
              hjust = -0.05, vjust = 1.6, size = 3)
   g
 }
-p2 <- (mk_hist("TotalIA","Internet Addiction (TotalIA, 0–94)", 4, 31, "addicted ≥ 31") |
-       mk_hist("totalphq","Depression (PHQ-9, 0–27)", 1) |
-       mk_hist("lonelinesstotal","Loneliness (UCLA, 29–75)", 2)) +
-  plot_annotation(title = "Fig 2 — Internet-addiction scores are strongly right-skewed; most students score low",
+p2 <- (mk_hist("TotalIA","Internet Addiction (TotalIA, 0-94)", 4, 31, "addicted ≥ 31") |
+       mk_hist("totalphq","Depression (PHQ-9, 0-27)", 1) |
+       mk_hist("lonelinesstotal","Loneliness (UCLA, 29-75)", 2)) +
+  plot_annotation(title = "Fig 2: Internet-addiction scores are strongly right-skewed; most students score low",
                   caption = "The right skew of TotalIA (and the 75% below the addiction cutoff) motivates the binary 'addicted' outcome for the forecast.",
                   theme = theme(plot.title = element_text(face = "bold", size = 14),
                                 plot.caption = element_text(color = "grey45", size = 8.5, hjust = 0)))
@@ -61,7 +62,7 @@ p3 <- ggplot(cm_long, aes(Var1, Var2, fill = Freq)) +
   geom_text(aes(label = sprintf("%.2f", Freq)), size = 3.4) +
   scale_fill_gradient2(low = "#2166AC", mid = "white", high = "#B2182B", midpoint = 0,
                        limits = c(-1,1), name = "Pearson r") +
-  labs(title = "Fig 3 — Depression correlates 0.53 with addiction; loneliness only 0.31",
+  labs(title = "Fig 3: Depression correlates 0.53 with addiction; loneliness only 0.31",
        subtitle = "Social-media hours also correlate 0.53 with addiction, but only 0.27 with depression",
        x = NULL, y = NULL,
        caption = "Hours are also floor-constrained (62% / 84% of students in the lowest bucket), so they make a poor proxy for mental health.") +
@@ -75,10 +76,10 @@ p4 <- cluster_profile %>% mutate(group4 = factor(group4, levels = clusters)) %>%
   geom_text(aes(label = sprintf("%.0f%%", addicted_pct)), vjust = -0.3, size = 4) +
   scale_fill_manual(values = pal, guide = "none") +
   scale_y_continuous(expand = expansion(mult = c(0, .15)), labels = function(x) paste0(x,"%")) +
-  labs(title = "Fig 4 — Internet-addiction prevalence more than doubles across clusters",
+  labs(title = "Fig 4: Internet-addiction prevalence more than doubles across clusters",
        subtitle = "% of students scoring 'addicted' (IAC ≥ 2, TotalIA ≥ 31)",
        x = NULL, y = "Addicted (%)",
-       caption = "Males who don't exercise are the highest-risk group — the motivation for the forecast model.")
+       caption = "Males who don't exercise are the highest-risk group, the motivation for the forecast model.")
 SAVE("fig4_addiction_prevalence_by_cluster.png", p4, h = 5.0)
 
 # Fig 5 / Fig 6: TotalIA against depression and loneliness, faceted by cluster
@@ -90,15 +91,15 @@ scatter_by_cluster <- function(xvar, xlab, fign, strong) {
     facet_wrap(~ group4) +
     scale_color_manual(values = pal, guide = "none") +
     scale_fill_manual(values = pal, guide = "none") +
-    labs(title = sprintf("%s — Internet addiction vs %s, by cluster", fign, tolower(xlab)),
-         subtitle = strong, x = xlab, y = "Internet addiction (TotalIA, 0–94)",
+    labs(title = sprintf("%s, Internet addiction vs %s, by cluster", fign, tolower(xlab)),
+         subtitle = strong, x = xlab, y = "Internet addiction (TotalIA, 0-94)",
          caption = "Dotted line = addiction cutoff (31). Shaded band = 95% CI of the regression line.")
 }
 SAVE("fig5_iat_vs_depression_by_cluster.png",
-     scatter_by_cluster("totalphq", "Depression (PHQ-9, 0–27)", "Fig 5",
+     scatter_by_cluster("totalphq", "Depression (PHQ-9, 0-27)", "Fig 5",
        "Steepest depression slope among males who don't exercise; flattest among females who exercise"))
 SAVE("fig6_iat_vs_loneliness_by_cluster.png",
-     scatter_by_cluster("lonelinesstotal", "Loneliness (UCLA, 29–75)", "Fig 6",
+     scatter_by_cluster("lonelinesstotal", "Loneliness (UCLA, 29-75)", "Fig 6",
        "Loneliness adds little once depression is accounted for (see Fig 7)"))
 
 # Fig 7: standardized slopes per cluster
@@ -109,7 +110,7 @@ p7 <- cl_coef_z %>% mutate(cluster = factor(cluster, levels = rev(clusters))) %>
                  position = position_dodge(width = .6)) +
   geom_point(size = 2.6, position = position_dodge(width = .6)) +
   scale_color_manual(values = c("Depression (PHQ-9)" = "#C0392B", "Loneliness (UCLA)" = "#2C82C9"), name = NULL) +
-  labs(title = "Fig 7 — Depression drives internet addiction in every cluster; loneliness does not",
+  labs(title = "Fig 7: Depression drives internet addiction in every cluster; loneliness does not",
        subtitle = "Standardized β (per +1 SD of distress → SD change in addiction), with 95% CI",
        x = "Standardized regression coefficient (95% CI)", y = NULL,
        caption = "Each row = a separate within-cluster regression of TotalIA on depression + loneliness + age + bullied.")
@@ -123,28 +124,29 @@ pa <- ggplot(aug, aes(.fitted, .resid)) +
   labs(title = "Residuals vs fitted", x = "Fitted TotalIA", y = "Residual")
 pb <- ggplot(aug, aes(sample = .std.resid)) +
   stat_qq(alpha = .35, size = 1) + stat_qq_line(color = "#C0392B") +
-  labs(title = "Normal Q–Q", x = "Theoretical quantiles", y = "Std. residual")
+  labs(title = "Normal Q-Q", x = "Theoretical quantiles", y = "Std. residual")
 p8 <- (pa | pb) +
-  plot_annotation(title = "Fig 8 — Model diagnostics: roughly linear, with a mild right-tail in the residuals",
+  plot_annotation(title = "Fig 8: Model diagnostics: roughly linear, with a mild right-tail in the residuals",
                   caption = paste0("Left (linearity / equal variance): residuals roughly centred and flat, spread widens a little at high fitted values.\n",
-                                   "Right (normality): points track the line except a heavier upper tail — the skew of TotalIA. Reported honestly; it does not change the depression effect."),
+                                   "Right (normality): points track the line except a heavier upper tail, the skew of TotalIA. Reported honestly; it does not change the depression effect."),
                   theme = theme(plot.title = element_text(face = "bold", size = 14),
                                 plot.caption = element_text(color = "grey45", size = 8.5, hjust = 0)))
 SAVE("fig8_residual_diagnostics.png", p8, w = 10.5, h = 4.8)
 
-# Fig 9: pooled distress model -- TotalIA vs depression and vs loneliness
-b_dep <- coef(m_distress_z)["z_phq"]; b_lon <- coef(m_distress_z)["z_lonely"]
+# Fig 9: pooled distress model, TotalIA vs depression and vs loneliness
+b_dep <- coef(m_distress_z)["z_phq"]
+b_lon <- coef(m_distress_z)["z_lonely"]
 mk_pooled <- function(xvar, xlab) {
   ggplot(d, aes(.data[[xvar]], TotalIA)) +
     geom_point(alpha = .22, size = 1, color = "#4C72B0") +
     geom_smooth(method = "lm", formula = y ~ x, color = "#C0392B", fill = "#C0392B", alpha = .15, linewidth = 1) +
     geom_hline(yintercept = 31, linetype = "dotted", color = "grey45") +
-    labs(x = xlab, y = "Internet addiction (TotalIA, 0–94)")
+    labs(x = xlab, y = "Internet addiction (TotalIA, 0-94)")
 }
-p9 <- (mk_pooled("totalphq", "Depression (PHQ-9, 0–27)") |
-       mk_pooled("lonelinesstotal", "Loneliness (UCLA, 29–75)")) +
+p9 <- (mk_pooled("totalphq", "Depression (PHQ-9, 0-27)") |
+       mk_pooled("lonelinesstotal", "Loneliness (UCLA, 29-75)")) +
   plot_annotation(
-    title = "Fig 9 — One pooled model: TotalIA ~ depression + loneliness (n = 819)",
+    title = "Fig 9: One pooled model: TotalIA ~ depression + loneliness (n = 819)",
     subtitle = "Both distress predictors in a single regression; depression carries most of the signal",
     caption = sprintf("Lines are the regression fit with 95%% CI; dotted line = addiction cutoff (31).\nJoint-model standardized slopes: depression %.2f and loneliness %.2f. Loneliness shrinks because it overlaps with depression (r = 0.37).", b_dep, b_lon),
     theme = theme(plot.title = element_text(face = "bold", size = 14),
@@ -164,7 +166,7 @@ p10 <- ggplot(gtab, aes(estimate, lab, color = sig)) +
   geom_point(size = 2.9) +
   scale_color_manual(values = c(`TRUE` = "#C0392B", `FALSE` = "grey60"),
                      labels = c(`TRUE` = "p < .05", `FALSE` = "not significant"), name = NULL) +
-  labs(title = "Fig 10 — Global model: what predicts the internet-addiction score",
+  labs(title = "Fig 10: Global model: what predicts the internet-addiction score",
        subtitle = "Standardized coefficients (95% CI): TotalIA ~ depression + loneliness + sex + exercise + bullied + age",
        x = "Standardized coefficient (95% CI)", y = NULL,
        caption = "Continuous predictors per +1 SD; binaries are category contrasts. Depression, bullying and being male dominate; exercise has no independent effect.")
@@ -176,9 +178,9 @@ p11 <- ggplot(roc_df, aes(fpr, tpr)) +
   geom_path(color = "#C0392B", linewidth = 1.1) +
   annotate("text", x = .62, y = .15, label = sprintf("AUC = %.3f", auc_test), size = 5, color = "#C0392B") +
   coord_equal() +
-  labs(title = "Fig 11 — Forecast discrimination (held-out test set)",
+  labs(title = "Fig 11: Forecast discrimination (held-out test set)",
        subtitle = "Logistic P(addicted) from distress + sex + exercise + age + bullying",
-       x = "False-positive rate (1 − specificity)", y = "True-positive rate (sensitivity)",
+       x = "False-positive rate (1 - specificity)", y = "True-positive rate (sensitivity)",
        caption = sprintf("Test n = %d. AUC %.2f = good separation of addicted vs non-addicted students.", nrow(test), auc_test))
 SAVE("fig11_roc.png", p11, w = 7, h = 6.4)
 
@@ -190,7 +192,7 @@ p12 <- test %>% mutate(actual = factor(addicted, c(0,1), c("Not addicted","Addic
   geom_hline(yintercept = .5, linetype = 2, color = "grey40") +
   scale_fill_manual(values = c("Not addicted" = "#7FB069", "Addicted" = "#C0392B"), guide = "none") +
   scale_y_continuous(labels = percent_format(accuracy = 1)) +
-  labs(title = "Fig 12 — Higher predicted probabilities for truly-addicted students",
+  labs(title = "Fig 12: Higher predicted probabilities for truly-addicted students",
        subtitle = "Predicted P(addicted) on the held-out test set, by true status",
        x = NULL, y = "Predicted probability of addiction",
        caption = "Dashed line = 0.5 classification threshold. Clear separation, with expected overlap near the boundary.")

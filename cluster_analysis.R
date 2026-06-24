@@ -4,14 +4,21 @@
 # Forecast part: logistic regression for P(addicted), scored on a held-out test set.
 
 suppressMessages({
-  library(tidyverse); library(readxl); library(broom); library(patchwork); library(scales)
+  library(tidyverse)
+  library(readxl)
+  library(broom)
+  library(patchwork)
+  library(scales)
 })
 set.seed(42)
 dir.create("figures", showWarnings = FALSE)
 
-# capture() saves the printed output so we can drop it into the report later
+# capture() saves the printed output so we can put it in the report later
 LOG <- list()
-capture <- function(key, expr) { LOG[[key]] <<- paste(capture.output(expr), collapse = "\n"); invisible(expr) }
+capture <- function(key, expr) {
+  LOG[[key]] <<- paste(capture.output(expr), collapse = "\n")
+  invisible(expr)
+}
 
 # load the data
 raw <- read_excel("data/New Microsoft Excel Worksheet.xlsx")
@@ -20,7 +27,10 @@ capture("glimpse", glimpse(raw[, c("age","gender","exercise","bullied","sleeptim
                                    "socialmediatime","internettime","friendsrelationship",
                                    "TotalIA","IAC","totalphq","categoryphq",
                                    "lonelinesstotal","Lonelinesscategory")]))
-capture("na", { na <- colSums(is.na(raw)); if (all(na == 0)) cat("No missing values in any of the 91 columns.\n") else print(na[na > 0]) })
+capture("na", {
+  na <- colSums(is.na(raw))
+  if (all(na == 0)) cat("No missing values in any of the 91 columns.\n") else print(na[na > 0])
+})
 
 # build the variables we need from the raw columns
 sleep_map <- c("Less than 6 hours" = 5.0, "5-6 hours" = 5.5, "6-7 hours" = 6.5, "More than 7 hours" = 7.5)
@@ -59,11 +69,13 @@ d <- raw %>% mutate(
 
 write_csv(d, "data/enriched_data.csv")
 
-# poke around the data, captured for the report
+# explore the data, captured for the report
 capture("summary_key", print(summary(d[, c("age","TotalIA","totalphq","lonelinesstotal","sleep_h","sm_hours")])))
 capture("cat_levels", {
   for (v in c("gender","exercise","bullied","sleeptime","socialmediatime","internettime","friendsrelationship")) {
-    cat("---", v, "---\n"); print(table(d[[v]])); cat("\n")
+    cat("---", v, "---\n")
+    print(table(d[[v]]))
+    cat("\n")
   }
 })
 capture("band_map", {
@@ -80,7 +92,9 @@ capture("thresholds", {
 
 # how many students fall in each cluster
 balance <- d %>% count(group4) %>% mutate(pct = round(100*n/sum(n), 1))
-capture("balance", { cat("Sample size per cluster (sex x exercise):\n"); print(as.data.frame(balance))
+capture("balance", {
+  cat("Sample size per cluster (sex x exercise):\n")
+  print(as.data.frame(balance))
   cat(sprintf("\nGender overall: Female %d (%.1f%%) / Male %d (%.1f%%)\n",
               sum(d$sex=="Female"), 100*mean(d$sex=="Female"), sum(d$sex=="Male"), 100*mean(d$sex=="Male")))
   cat(sprintf("Exercise overall: Yes %d (%.1f%%) / No %d (%.1f%%)\n",
@@ -95,12 +109,18 @@ cluster_profile <- d %>% group_by(group4) %>%
             addicted_pct = 100*mean(addicted),
             mean_IAT = mean(TotalIA), mean_PHQ = mean(totalphq), mean_lonely = mean(lonelinesstotal),
             .groups = "drop")
-capture("cluster_profile", { cat("Per-cluster profile:\n"); print(as.data.frame(round_df <- cluster_profile %>% mutate(across(where(is.numeric), ~round(.,1))))) })
+capture("cluster_profile", {
+  cat("Per-cluster profile:\n")
+  print(as.data.frame(round_df <- cluster_profile %>% mutate(across(where(is.numeric), ~round(.,1)))))
+})
 
 # correlations between the main numeric variables
 cor_vars <- d %>% select(TotalIA, totalphq, lonelinesstotal, age, sleep_h, sm_hours)
 cor_mat  <- cor(cor_vars)
-capture("cormat", { cat("Pearson correlations (focal numeric features):\n"); print(round(cor_mat, 3)) })
+capture("cormat", {
+  cat("Pearson correlations (focal numeric features):\n")
+  print(round(cor_mat, 3))
+})
 
 # one regression per cluster: TotalIA ~ depression + loneliness + age + bullied
 clusters <- levels(d$group4)
@@ -153,13 +173,13 @@ capture("interaction", {
               int_test$Df[2], int_test$Res.Df[2], int_test$F[2], int_test$`Pr(>F)`[2]))
 })
 
-# check the regression assumptions (residual plots are in Fig 7, plus collinearity here)
+# check the regression assumptions (residual plots are in Fig 8, plus collinearity here)
 pred_cor <- cor(d$totalphq, d$lonelinesstotal)   # depression vs loneliness
 capture("assumptions", {
   cat(sprintf("Multicollinearity: the two predictors correlate r = %.2f -- modest, well below the\n", pred_cor))
   cat("  level that would destabilise a regression, so depression and loneliness can both stay in.\n")
-  cat("Linearity & equal variance: judged from the Residuals-vs-Fitted plot (Fig 7, left).\n")
-  cat("Normality of residuals:    judged from the Normal Q-Q plot (Fig 7, right).\n")
+  cat("Linearity & equal variance: judged from the Residuals-vs-Fitted plot (Fig 8, left).\n")
+  cat("Normality of residuals:    judged from the Normal Q-Q plot (Fig 8, right).\n")
   cat("Both look reasonable: residuals are roughly centred and linear, with a mildly heavier right\n")
   cat("tail and a slightly wider spread at high fitted values (expected from the skew of TotalIA).\n")
   cat("We report this honestly; it does not change the sign or the large size of the depression\n")
@@ -176,8 +196,8 @@ m_distress   <- lm(TotalIA ~ totalphq + lonelinesstotal, data = d)
 m_distress_z <- lm(z_iat ~ z_phq + z_lonely, data = d)        # standardized betas
 gA <- broom::glance(m_distress)
 
-# Model B: global additive. age is kept; sleep is left OUT on purpose -- it is a
-# consequence of addiction, not a cause (see the sleep test below).
+# Model B: global additive. age is kept; sleep is left OUT on purpose, because it is
+# a consequence of addiction, not a cause (see the sleep test below).
 m_global   <- lm(TotalIA ~ totalphq + lonelinesstotal + male + exercise_b + bullied_b + age, data = d)
 dz         <- d %>% mutate(across(c(TotalIA, totalphq, lonelinesstotal, age), zc2))
 m_global_z <- lm(TotalIA ~ totalphq + lonelinesstotal + male + exercise_b + bullied_b + age, data = dz)
@@ -194,8 +214,10 @@ capture("m_global", {
   cat("Model B  global additive  TotalIA ~ depression + loneliness + male + exercise + bullied + age\n")
   print(as.data.frame(broom::tidy(m_global, conf.int = TRUE) %>% mutate(across(where(is.numeric), ~round(., 4)))))
   cat(sprintf("R2=%.3f adjR2=%.3f RSE=%.2f F(%d,%d)=%.1f\n", gB$r.squared, gB$adj.r.squared, gB$sigma, gB$df, gB$df.residual, gB$statistic))
-  cat("standardized betas (continuous per +1 SD; binaries are category contrasts):\n"); print(round(coef(m_global_z)[-1], 3))
-  cat("\nnested F -- does adding sex+exercise+bullied+age beat distress-only?\n"); print(nested_AB)
+  cat("standardized betas (continuous per +1 SD; binaries are category contrasts):\n")
+  print(round(coef(m_global_z)[-1], 3))
+  cat("\nnested F -- does adding sex+exercise+bullied+age beat distress-only?\n")
+  print(nested_AB)
 })
 
 # sleep test: is sleep DOWNSTREAM of addiction (more IAT -> less sleep)? this is
@@ -211,7 +233,8 @@ capture("sleep_test", {
               cor(d$TotalIA, d$sleep_h), 10 * coef(m_sleep)["TotalIA"]))
   cat("with age + sex controlled, the IAT coefficient:\n")
   print(as.data.frame(broom::tidy(m_sleep_adj, conf.int = TRUE) %>% filter(term == "TotalIA") %>% mutate(across(where(is.numeric), ~round(., 5)))))
-  cat("\nmean sleep (h) by IAT band:\n"); print(as.data.frame(sleep_by_band %>% mutate(across(where(is.numeric), ~round(., 2)))))
+  cat("\nmean sleep (h) by IAT band:\n")
+  print(as.data.frame(sleep_by_band %>% mutate(across(where(is.numeric), ~round(., 2)))))
 })
 
 # forecast: logistic regression with a 70/30 split stratified by cluster
@@ -228,10 +251,12 @@ or_tab   <- broom::tidy(glm_full, conf.int = TRUE, exponentiate = TRUE)
 
 test$phat <- predict(glm_tr, newdata = test, type = "response")
 
-# AUC via the Mann-Whitney trick, and a ROC curve, both in base R
+# AUC using the Mann-Whitney method, and a ROC curve, both in base R
 auc_fn <- function(label, score) {
-  pos <- score[label == 1]; neg <- score[label == 0]
-  r <- rank(c(pos, neg)); (sum(r[seq_along(pos)]) - length(pos)*(length(pos)+1)/2) / (length(pos)*length(neg))
+  pos <- score[label == 1]
+  neg <- score[label == 0]
+  r <- rank(c(pos, neg))
+  (sum(r[seq_along(pos)]) - length(pos)*(length(pos)+1)/2) / (length(pos)*length(neg))
 }
 roc_fn <- function(label, score) {
   thr <- sort(unique(c(-Inf, score, Inf)), decreasing = TRUE)
@@ -246,10 +271,16 @@ roc_df   <- roc_fn(test$addicted, test$phat)
 # confusion matrix at a 0.5 cutoff
 pred_cls <- as.integer(test$phat >= 0.5)
 cm <- table(Predicted = factor(pred_cls, c(0,1)), Actual = factor(test$addicted, c(0,1)))
-TP <- cm["1","1"]; TN <- cm["0","0"]; FP <- cm["1","0"]; FN <- cm["0","1"]
-acc  <- (TP+TN)/sum(cm); sens <- TP/(TP+FN); spec <- TN/(TN+FP)
-prec <- ifelse((TP+FP)>0, TP/(TP+FP), NA); f1 <- ifelse(!is.na(prec) && (prec+sens)>0, 2*prec*sens/(prec+sens), NA)
-# what we'd get just guessing the majority class
+TP <- cm["1","1"]
+TN <- cm["0","0"]
+FP <- cm["1","0"]
+FN <- cm["0","1"]
+acc  <- (TP+TN)/sum(cm)
+sens <- TP/(TP+FN)
+spec <- TN/(TN+FP)
+prec <- ifelse((TP+FP)>0, TP/(TP+FP), NA)
+f1   <- ifelse(!is.na(prec) && (prec+sens)>0, 2*prec*sens/(prec+sens), NA)
+# the accuracy we get if we always predict the majority class
 base_acc <- max(mean(test$addicted), 1 - mean(test$addicted))
 
 capture("forecast", {
@@ -258,7 +289,8 @@ capture("forecast", {
   print(or_tab %>% mutate(across(where(is.numeric), ~round(., 3))) %>% as.data.frame())
   cat(sprintf("\nHeld-out test set: n=%d (%.0f%% positives)\n", nrow(test), 100*mean(test$addicted)))
   cat(sprintf("Test AUC = %.3f\n", auc_test))
-  cat("\nConfusion matrix (threshold 0.5):\n"); print(cm)
+  cat("\nConfusion matrix (threshold 0.5):\n")
+  print(cm)
   cat(sprintf("Accuracy=%.3f (baseline %.3f) | Sensitivity=%.3f | Specificity=%.3f | Precision=%.3f | F1=%.3f\n",
               acc, base_acc, sens, spec, prec, f1))
 })
@@ -271,7 +303,7 @@ prof <- expand_grid(male = 0:1, exercise_b = 0:1) %>%
                                 ifelse(exercise_b==1,"Exercises","No exercise")), levels = clusters))
 prof$phat <- predict(glm_full, newdata = prof, type = "response")
 
-# save everything the report pulls from
+# save everything the report uses
 saveRDS(list(
   n = nrow(d), LOG = LOG, balance = balance, cluster_profile = cluster_profile,
   cor_mat = cor_mat, cl_coef = cl_coef, cl_coef_z = cl_coef_z, cl_glance = cl_glance,
@@ -297,6 +329,6 @@ cat("Saved: results.rds, data/enriched_data.csv\n")
 cat(sprintf("Interaction test p=%.4f | Test AUC=%.3f | Accuracy=%.3f\n",
             int_test$`Pr(>F)`[2], auc_test, acc))
 
-# figures live in their own file
+# figures are in their own file
 source("make_figures.R", local = TRUE)
 cat("Figures written to figures/\n")
