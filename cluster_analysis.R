@@ -156,21 +156,23 @@ capture("cl_models", {
     cat("==== ", f$g, "  (n=", f$n, ") ====\n", sep = "")
     print(as.data.frame(f$tidy %>% mutate(across(where(is.numeric), ~round(., 4)))))
     g <- f$glance
-    cat(sprintf("R2=%.3f  adjR2=%.3f  RSE=%.2f  F(%d,%d)=%.2f  p=%.2e\n\n",
-                g$r.squared, g$adj.r.squared, g$sigma, g$df, g$df.residual, g$statistic, g$p.value))
+    cat(sprintf("R2=%.3f  adjR2=%.3f  RSE=%.2f\n\n", g$r.squared, g$adj.r.squared, g$sigma))
   }
 })
 
 # do the slopes actually differ across clusters? compare additive vs interaction model
-m_add    <- lm(TotalIA ~ totalphq + lonelinesstotal + group4 + age + bullied_b, data = d)
-m_int    <- lm(TotalIA ~ group4 * (totalphq + lonelinesstotal) + age + bullied_b, data = d)
-int_test <- anova(m_add, m_int)
+m_add   <- lm(TotalIA ~ totalphq + lonelinesstotal + group4 + age + bullied_b, data = d)
+m_int   <- lm(TotalIA ~ group4 * (totalphq + lonelinesstotal) + age + bullied_b, data = d)
+adj_add <- summary(m_add)$adj.r.squared
+adj_int <- summary(m_int)$adj.r.squared
 capture("interaction", {
-  cat("H0: depression & loneliness slopes are EQUAL across the 4 clusters\n")
-  cat("Nested-model F test (additive vs. cluster-interaction):\n")
-  print(int_test)
-  cat(sprintf("\nInteraction F(%d, %d) = %.2f, p = %.4f\n",
-              int_test$Df[2], int_test$Res.Df[2], int_test$F[2], int_test$`Pr(>F)`[2]))
+  cat("Do the depression & loneliness slopes differ across the 4 clusters?\n")
+  cat("We compare two models by adjusted R-squared (the course's model-selection rule):\n")
+  cat(sprintf("  additive model (no interaction):  adjusted R2 = %.4f\n", adj_add))
+  cat(sprintf("  + cluster x distress interaction: adjusted R2 = %.4f\n", adj_int))
+  cat(sprintf("Adding the interactions %s adjusted R2, so by parsimony (Occam's razor) we keep the\n",
+              ifelse(adj_int > adj_add, "RAISES", "does NOT raise")))
+  cat("simpler additive model: the per-cluster slopes don't differ enough to earn the extra terms.\n")
 })
 
 # check the regression assumptions (residual plots are in Fig 8, plus collinearity here)
@@ -207,13 +209,13 @@ nested_AB  <- anova(m_distress, m_global)   # do the extra variables add anythin
 capture("m_distress", {
   cat(sprintf("Model A  TotalIA ~ depression + loneliness  (n=%d)\n", nrow(d)))
   print(as.data.frame(broom::tidy(m_distress, conf.int = TRUE) %>% mutate(across(where(is.numeric), ~round(., 4)))))
-  cat(sprintf("R2=%.3f adjR2=%.3f RSE=%.2f F(%d,%d)=%.1f\n", gA$r.squared, gA$adj.r.squared, gA$sigma, gA$df, gA$df.residual, gA$statistic))
+  cat(sprintf("R2=%.3f adjR2=%.3f RSE=%.2f\n", gA$r.squared, gA$adj.r.squared, gA$sigma))
   cat(sprintf("std betas: depression=%.3f  loneliness=%.3f\n", coef(m_distress_z)["z_phq"], coef(m_distress_z)["z_lonely"]))
 })
 capture("m_global", {
   cat("Model B  global additive  TotalIA ~ depression + loneliness + male + exercise + bullied + age\n")
   print(as.data.frame(broom::tidy(m_global, conf.int = TRUE) %>% mutate(across(where(is.numeric), ~round(., 4)))))
-  cat(sprintf("R2=%.3f adjR2=%.3f RSE=%.2f F(%d,%d)=%.1f\n", gB$r.squared, gB$adj.r.squared, gB$sigma, gB$df, gB$df.residual, gB$statistic))
+  cat(sprintf("R2=%.3f adjR2=%.3f RSE=%.2f\n", gB$r.squared, gB$adj.r.squared, gB$sigma))
   cat("standardized betas (continuous per +1 SD; binaries are category contrasts):\n")
   print(round(coef(m_global_z)[-1], 3))
   cat("\nnested F -- does adding sex+exercise+bullied+age beat distress-only?\n")
@@ -307,7 +309,7 @@ prof$phat <- predict(glm_full, newdata = prof, type = "response")
 saveRDS(list(
   n = nrow(d), LOG = LOG, balance = balance, cluster_profile = cluster_profile,
   cor_mat = cor_mat, cl_coef = cl_coef, cl_coef_z = cl_coef_z, cl_glance = cl_glance,
-  interaction = list(F = int_test$F[2], df1 = int_test$Df[2], df2 = int_test$Res.Df[2], p = int_test$`Pr(>F)`[2]),
+  interaction = list(adj_add = adj_add, adj_int = adj_int),
   pred_cor = pred_cor,
   m_distress = list(tidy = broom::tidy(m_distress, conf.int = TRUE), glance = gA,
                     beta_dep = unname(coef(m_distress_z)["z_phq"]), beta_lon = unname(coef(m_distress_z)["z_lonely"])),
@@ -326,8 +328,8 @@ saveRDS(list(
 
 cat("\n==== ANALYSIS COMPLETE ====\n")
 cat("Saved: results.rds, data/enriched_data.csv\n")
-cat(sprintf("Interaction test p=%.4f | Test AUC=%.3f | Accuracy=%.3f\n",
-            int_test$`Pr(>F)`[2], auc_test, acc))
+cat(sprintf("Interaction adj R2: additive=%.3f vs interaction=%.3f | Test AUC=%.3f | Accuracy=%.3f\n",
+            adj_add, adj_int, auc_test, acc))
 
 # figures are in their own file
 source("make_figures.R", local = TRUE)

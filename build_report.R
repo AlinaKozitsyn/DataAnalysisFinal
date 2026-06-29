@@ -30,7 +30,7 @@ prof<- r$prof[match(ord, as.character(r$prof$group4)),]
 ot  <- r$or_tab %>% filter(term!="(Intercept)")
 orv <- function(t) ot %>% filter(term==t)
 m   <- r$metrics; cm <- r$cm
-intF<- r$interaction$F; intp<- r$interaction$p; intd1<- r$interaction$df1; intd2<- r$interaction$df2
+adjadd <- r$interaction$adj_add; adjint <- r$interaction$adj_int
 
 # tables
 clreg <- tibble(
@@ -96,7 +96,7 @@ hyp <- tibble(
   Verdict = c(
     sprintf('<span class="ok">CONFIRMED</span>, std β %.2f-%.2f, all p &lt; .001', min(zdep$std_beta), max(zdep$std_beta)),
     '<span class="mid">PARTIAL</span>, small but significant in the pooled models (β 0.11-0.13, p&lt;.001); near zero in 3 of 4 individual clusters',
-    sprintf('<span class="no">CONTRADICTED</span>, interaction F(%d,%d)=%.2f, p=%.2f (slopes equal)', intd1, intd2, intF, intp),
+    sprintf('<span class="no">CONTRADICTED</span>, adding cluster×distress interactions does not raise adjusted R² (%.3f → %.3f); by parsimony the additive model wins (slopes do not differ)', adjadd, adjint),
     sprintf('<span class="ok">CONFIRMED</span>, %.0f%% vs %.0f%%; male OR=%.2f, p=%s', max(cp$addicted_pct), min(cp$addicted_pct), orv("male")$estimate, sub("^&lt; ","<",fp(orv("male")$p.value))),
     '<span class="ok">CONFIRMED</span>, IAT tracks depression at r=0.53; social-media hours track it only 0.27',
     sprintf('<span class="mid">PARTIAL</span>, AUC=%.2f, accuracy=%.2f &gt; %.2f baseline', r$auc_test, m["acc"], m["base_acc"]),
@@ -155,9 +155,9 @@ add('<div class="meta"><b>Authors:</b> Noam Avizmil · Tomer Golshani · May Man
 
 # abstract
 add('<h2 id="abstract">Abstract</h2>')
-add(sprintf('<p class="lead">We ask whether depression and loneliness turn into <i>perceived internet addiction</i> (Internet Addiction Test, IAT) differently depending on a student’s sex and whether they exercise. Across 819 adolescents we fit one linear regression of the IAT score per cluster (4 clusters = sex × exercise) and a logistic regression that forecasts the <i>chance</i> of being internet-addicted (IAT ≥ 31, the Young cutoff). <b>Depression is a strong, significant predictor of internet addiction in every cluster</b> (standardized β %.2f-%.2f, all p &lt; .001), explaining %.0f-%.0f%% of the variance, while loneliness is a much weaker predictor, small but statistically significant in the pooled models, and near zero within the individual clusters. Contrary to our hypothesis, exercise does not flatten the distress-to-addiction slope (cluster interaction p = %.2f). What the clusters differ in is level: %.0f%% of non-exercising boys score as addicted, versus about %.0f%% of girls. The forecast model reaches <b>AUC = %.2f</b> (accuracy %.2f vs %.2f baseline), with depression, being male, age and being bullied all raising the odds. So the short version is that distress hits every subgroup about equally hard, but non-exercising boys start from a much higher baseline.</p>',
+add(sprintf('<p class="lead">We ask whether depression and loneliness turn into <i>perceived internet addiction</i> (Internet Addiction Test, IAT) differently depending on a student’s sex and whether they exercise. Across 819 adolescents we fit one linear regression of the IAT score per cluster (4 clusters = sex × exercise) and a logistic regression that forecasts the <i>chance</i> of being internet-addicted (IAT ≥ 31, the Young cutoff). <b>Depression is a strong, significant predictor of internet addiction in every cluster</b> (standardized β %.2f-%.2f, all p &lt; .001), explaining %.0f-%.0f%% of the variance, while loneliness is a much weaker predictor, small but statistically significant in the pooled models, and near zero within the individual clusters. Contrary to our hypothesis, exercise does not flatten the distress-to-addiction slope (adding the cluster interactions does not raise adjusted R², %.3f → %.3f). What the clusters differ in is level: %.0f%% of non-exercising boys score as addicted, versus about %.0f%% of girls. The forecast model reaches <b>AUC = %.2f</b> (accuracy %.2f vs %.2f baseline), with depression, being male, age and being bullied all raising the odds. So the short version is that distress hits every subgroup about equally hard, but non-exercising boys start from a much higher baseline.</p>',
             min(zdep$std_beta), max(zdep$std_beta), 100*min(gi$r.squared), 100*max(gi$r.squared),
-            intp, max(cp$addicted_pct), mean(cp$addicted_pct[1:2]), r$auc_test, m["acc"], m["base_acc"]))
+            adjadd, adjint, max(cp$addicted_pct), mean(cp$addicted_pct[1:2]), r$auc_test, m["acc"], m["base_acc"]))
 
 # TOC
 add('<h2 id="toc">Contents</h2><div class="toc">',
@@ -245,7 +245,7 @@ add(ktab(clreg, "Per-cluster regression of TotalIA on depression + loneliness (+
 add(fig("fig5_iat_vs_depression_by_cluster.png", 5, "Internet addiction vs depression within each cluster, with fitted line and 95% CI. The positive slope is clear and similar in all four panels."))
 add(fig("fig6_iat_vs_loneliness_by_cluster.png", 6, "Internet addiction vs loneliness within each cluster. Slopes are shallow, so loneliness carries little independent signal."))
 add(fig("fig7_cluster_coefficients.png", 7, "Standardized depression (red) and loneliness (blue) slopes per cluster, 95% CI. Depression is strong and significant everywhere; loneliness overlaps zero in three of four clusters."))
-add(sprintf('<div class="finding"><b>Do the slopes differ across clusters?</b> No. The pooled interaction test is <b>not significant: F(%d,&nbsp;%d) = %.2f, p = %.2f</b>. Statistically, depression pushes internet addiction just as hard for non-exercising boys as it does for exercising girls. This contradicts our hypothesis (H2) that exercise buffers the distress-to-addiction link.</div>', intd1, intd2, intF, intp))
+add(sprintf('<div class="finding"><b>Do the slopes differ across clusters?</b> No. We compare the additive model with one that adds cluster×distress interactions, using adjusted R² (the course’s model-selection rule): the interactions <b>do not raise adjusted R² (%.3f → %.3f)</b>, so by parsimony we keep the simpler additive model. Depression pushes internet addiction just as hard for non-exercising boys as it does for exercising girls. This contradicts our hypothesis (H2) that exercise buffers the distress-to-addiction link.</div>', adjadd, adjint))
 add('<div class="finding"><b>A closer look: levels, not slopes.</b> If exercise doesn’t flatten the slope, why are non-exercising boys so much more addicted (Fig 4)? The reason is that the clusters differ in where they start, not in how steeply distress bites. Non-exercising boys carry the highest mean depression (10.2 vs 7.7-8.0 for girls and 8.7 for exercising boys) and a higher male baseline, so the same slope sitting on a higher intercept lands many more of them above the addiction line. In practical terms, distress drives addiction across the board, while sex and inactivity set the baseline risk. Prevention should target the high-baseline subgroup, but the underlying mechanism, distress, is shared by everyone.</div>')
 
 add('<h3>Checking the model assumptions</h3>')
@@ -254,7 +254,7 @@ add(fig("fig8_residual_diagnostics.png", 8, "Residuals-vs-Fitted (linearity / eq
 
 # 7b pooled whole-sample models
 add('<h3>Pooling the clusters: two whole-sample models</h3>')
-add(sprintf('<p>Because the slopes don’t differ across clusters (the interaction was not significant), we can drop the stratification and fit single models on all %d students. <b>Model A</b> keeps just the two distress predictors. <b>Model B</b> is a global additive model that also brings in sex, exercise, bullying and age.</p>', r$n))
+add(sprintf('<p>Because the slopes don’t differ across clusters (the cluster interactions did not improve adjusted R²), we can drop the stratification and fit single models on all %d students. <b>Model A</b> keeps just the two distress predictors. <b>Model B</b> is a global additive model that also brings in sex, exercise, bullying and age.</p>', r$n))
 
 # Model A: distress only
 mdt <- r$m_distress$tidy %>% filter(term != "(Intercept)")
@@ -285,9 +285,9 @@ modelB_tab <- tibble(
 gB <- r$m_global$glance; nab <- r$nested_AB
 gv <- function(t) mgz$estimate[mgz$term == t]
 add('<h4>Model B, the global model</h4>')
-add(sprintf('<p>Adding sex, exercise, bullying and age lifts R² to %.2f. The biggest standardized effects (Fig 10) are depression (%.2f), being bullied (%.2f) and being male (%.2f); being bullied or male each adds roughly 5 IAT points. Loneliness (%.2f) and age (%.2f) are smaller but still significant. The one null is <b>exercise</b>: its coefficient is essentially zero (std β %.2f, p = %s). So once distress and sex are in the model, whether a student exercises adds nothing to their predicted addiction score, which echoes the non-significant exercise term in the forecast. The four extra variables do jointly improve the fit (nested F(%d, %d) = %.1f, p &lt; .001).</p>',
+add(sprintf('<p>Adding sex, exercise, bullying and age lifts R² to %.2f. The biggest standardized effects (Fig 10) are depression (%.2f), being bullied (%.2f) and being male (%.2f); being bullied or male each adds roughly 5 IAT points. Loneliness (%.2f) and age (%.2f) are smaller but still significant. The one null is <b>exercise</b>: its coefficient is essentially zero (std β %.2f, p = %s). So once distress and sex are in the model, whether a student exercises adds nothing to their predicted addiction score, which echoes the non-significant exercise term in the forecast. The four extra variables earn their place by the course’s adjusted-R² rule: adjusted R² rises from %.2f (Model A) to %.2f (Model B).</p>',
             gB$r.squared, gv("totalphq"), gv("bullied_b"), gv("male"), gv("lonelinesstotal"), gv("age"),
-            gv("exercise_b"), fp(mgt$p.value[mgt$term == "exercise_b"]), nab$df1, nab$df2, nab$F))
+            gv("exercise_b"), fp(mgt$p.value[mgt$term == "exercise_b"]), r$m_distress$glance$adj.r.squared, gB$adj.r.squared))
 add(ktab(modelB_tab, sprintf("Model B (global): TotalIA ~ depression + loneliness + sex + exercise + bullied + age. n = %d, R² = %.2f, adj. R² = %.2f, RSE = %.1f. Every variable’s p-value and significance is shown.", r$n, gB$r.squared, gB$adj.r.squared, gB$sigma)))
 add(fig("fig10_global_model.png", 10, "Standardized coefficients with 95% CI for the global model. Red = significant (p < .05), grey = not. Depression, bullying and being male lead; exercise sits on zero."))
 
